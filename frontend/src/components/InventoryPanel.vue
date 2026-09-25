@@ -55,7 +55,8 @@ const groups = computed(() =>
     .filter((g) => g.items.length),
 )
 
-// §6 panel.summary: n = items with quantity > 0, m = sum of quantities
+// §6 panel.summary: n = items with quantity > 0, m = sum of quantities; singular 1 Produkt / 1 Artikel
+// ("Artikel" is the same word in singular and plural)
 const summary = computed(() => {
   const items = inventory.value?.items ?? []
   return {
@@ -109,7 +110,8 @@ const price = (cents: number) =>
             v-if="state === 'ready' && inventory?.items.length"
             class="mt-1 text-sm text-muted-foreground tabular-nums"
           >
-            {{ summary.products }} Produkte · {{ summary.units }} Artikel im Automaten
+            {{ summary.products }} {{ summary.products === 1 ? 'Produkt' : 'Produkte' }} ·
+            {{ summary.units }} Artikel im Automaten
           </p>
 
           <div class="mt-4 min-h-0 flex-1 overflow-y-auto overscroll-contain">

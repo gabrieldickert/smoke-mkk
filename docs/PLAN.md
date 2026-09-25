@@ -1,6 +1,6 @@
 # Smoke MKK — Phase 1 implementation plan
 
-*Status: approved 2026-09-25 · Owner: the PM/orchestrator (`.claude/agents/smokemkk-pm.md`) · Tree state: docs and agent definitions only, no code yet.*
+*Status: T0, B1, B2, F1, F2 done and committed (2026-09-25) · T2 blocked on Docker Desktop · Owner: the PM/orchestrator (`.claude/agents/smokemkk-pm.md`).*
 
 This is the constitution for phase 1. Anyone — human or agent — picking the project up reads `CLAUDE.md` first, then this file, then takes a ticket from §9. The two specialists implement against §5 (contract) and §6 (copy) **as written here**. Changing either is the PM's decision and is written back here before anyone codes against it.
 
@@ -335,6 +335,7 @@ Runs once, by the PM, after both specialists have reported. A specialist's own b
 | **F1** | smokemkk-frontend | `frontend/**` — `ui-ux-pro-max` first (palette + fonts), scaffold, Tailwind, Inspira prerequisites + tokens, 4 copied components, 5 own components, 2 views, router, `api.ts`, `index.html` meta, `public/`, `nginx.conf`, `Dockerfile`, `.dockerignore` | `npm run build` clean (incl. `vue-tsc`); browser check at 1280×800 and 375×812 with the dev server (API may be absent → §6 empty/error states must render) | §5, §6 |
 | **B2** | smokemkk-backend | `backend/**` — `Product.ImageUrl` (nullable), second migration `AddProductImage`, seed catalogue renamed with image paths per §3, `imageUrl` in `InventoryItemDto` per §5 | `dotnet build -warnaserror` clean; `has-pending-model-changes` none; exactly two migrations | B1, §5 |
 | **F1+** | smokemkk-frontend | added to F1: product images with category fallback, quantity per item, panel summary (§4.3, §6); `public/products/` stays empty apart from a `README.txt` naming the expected files | as F1, plus the panel checked with the API absent (§6 states) | §5, §6 |
+| **F2** | smokemkk-frontend | `frontend/**` — self-host Space Grotesk (`public/fonts/*.woff2`, `@font-face`, `font-display: swap`, remove every fonts.googleapis.com / fonts.gstatic.com reference); `skipLink` per §6; `panel.summary` singular forms per §6 | `npm run build` clean; `grep -r googleapis frontend/src frontend/index.html` empty; browser network tab shows no request to a Google host | F1 |
 | **T2** | PM | run §7; legal placeholder review; visually compare all 12 pins with the Google links; commit; update this file's status line | §7 all green | B1, F1, Docker Desktop |
 
 B1 and F1 run **in parallel** — disjoint paths, contract already fixed. The migration is created once, in B1, by the backend specialist; nobody else runs `dotnet ef`.

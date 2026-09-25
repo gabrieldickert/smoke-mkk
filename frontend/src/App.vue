@@ -5,6 +5,11 @@ import SocialLinks from './components/SocialLinks.vue'
 
 <template>
   <div class="flex min-h-svh flex-col">
+    <a
+      href="#main"
+      class="sr-only rounded-lg bg-primary font-semibold text-primary-foreground focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[1300] focus:px-4 focus:py-3"
+      >Zum Inhalt springen</a
+    >
     <header
       class="sticky top-0 z-[1200] border-b border-border/60 bg-background/80 backdrop-blur-md"
     >
@@ -16,7 +21,7 @@ import SocialLinks from './components/SocialLinks.vue'
       </div>
     </header>
 
-    <main class="flex-1">
+    <main id="main" tabindex="-1" class="flex-1 focus:outline-none">
       <RouterView v-slot="{ Component }">
         <Transition name="fade" mode="out-in">
           <component :is="Component" />

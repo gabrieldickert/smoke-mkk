@@ -15,7 +15,7 @@ const isImprint = computed(() => route.name === 'impressum')
       TODO (operator): replace with the real legal text.
       Datenschutz must cover (docs/PLAN.md §4.3): OpenStreetMap tile requests (visitor IP goes to
       openstreetmap.org), the localStorage flag "ageConfirmed" set by the 18+ dialog, and the outbound
-      Instagram/TikTok links. Also: Google Fonts is loaded from fonts.googleapis.com (IP to Google).
+      Instagram/TikTok links. (Fonts are self-hosted; no third-party font requests.)
     -->
     <p class="mt-6 text-muted-foreground">TODO: Text vom Betreiber einfügen.</p>
   </article>
