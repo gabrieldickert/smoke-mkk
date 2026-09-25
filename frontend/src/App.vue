@@ -30,18 +30,25 @@ import SocialLinks from './components/SocialLinks.vue'
     </main>
 
     <footer class="border-t border-border/60">
-      <nav class="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-2 px-4 py-6 text-sm">
-        <RouterLink
-          to="/impressum"
-          class="rounded-md px-3 py-2.5 text-muted-foreground transition-colors duration-200 hover:text-foreground"
-          >Impressum</RouterLink
-        >
-        <RouterLink
-          to="/datenschutz"
-          class="rounded-md px-3 py-2.5 text-muted-foreground transition-colors duration-200 hover:text-foreground"
-          >Datenschutz</RouterLink
-        >
-      </nav>
+      <div
+        class="mx-auto flex max-w-6xl flex-col items-center gap-1 px-4 py-6 text-sm sm:flex-row sm:justify-between"
+      >
+        <p class="text-center text-muted-foreground text-balance">
+          SMOKE · Automaten im <span class="whitespace-nowrap">Main-Kinzig-Kreis</span> und drumherum
+        </p>
+        <nav class="flex flex-wrap items-center justify-center gap-2">
+          <RouterLink
+            to="/impressum"
+            class="rounded-md px-3 py-2.5 text-muted-foreground transition-colors duration-200 hover:text-foreground"
+            >Impressum</RouterLink
+          >
+          <RouterLink
+            to="/datenschutz"
+            class="rounded-md px-3 py-2.5 text-muted-foreground transition-colors duration-200 hover:text-foreground"
+            >Datenschutz</RouterLink
+          >
+        </nav>
+      </div>
     </footer>
 
     <AgeGate />

@@ -28,12 +28,23 @@ onMounted(async () => {
   }
 })
 
-function selectFromCard(id: number) {
-  selectedId.value = id
+function scrollToMap() {
   mapSection.value?.scrollIntoView({
     behavior: reduceMotion.value ? 'auto' : 'smooth',
     block: 'start',
   })
+}
+
+function selectFromCard(id: number) {
+  selectedId.value = id
+  scrollToMap()
+}
+
+// Hero CTA. Not a plain hash jump: router.ts scrollBehavior would send the page back to the top.
+// Focus moves to the section so the next Tab continues in the map, not back in the hero.
+function jumpToMap() {
+  scrollToMap()
+  mapSection.value?.focus({ preventScroll: true })
 }
 </script>
 
@@ -68,9 +79,33 @@ function selectFromCard(id: number) {
           v-if="machines.length"
           class="mt-5 max-w-xl text-lg text-foreground/85 text-balance sm:text-xl"
         >
-          Rund um die Uhr. An {{ machines.length }} Standorten in Hessen.
+          Hat immer auf. {{ machines.length }}
+          {{ machines.length === 1 ? 'Automat' : 'Automaten' }} zwischen Rodgau und Fulda.
         </p>
-        <div class="mt-8">
+        <a
+          href="#standorte"
+          class="mt-8 inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-7 py-3 text-lg font-semibold uppercase tracking-wide text-primary-foreground shadow-[0_0_24px_var(--glow)] transition-colors duration-200 hover:bg-primary/85"
+          @click.exact.prevent="jumpToMap"
+        >
+          <svg
+            class="size-5 shrink-0"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+          Automat finden
+        </a>
+        <p class="mt-10 text-sm text-muted-foreground text-balance">
+          Neue Standorte gibt's zuerst auf Instagram und TikTok.
+        </p>
+        <div class="mt-3">
           <SocialLinks variant="cta" />
         </div>
       </Reveal>
@@ -80,12 +115,17 @@ function selectFromCard(id: number) {
       id="standorte"
       ref="mapSection"
       aria-labelledby="standorte-heading"
-      class="mx-auto max-w-6xl scroll-mt-20 px-4 py-16"
+      tabindex="-1"
+      class="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 focus:outline-none"
     >
       <Reveal>
         <h2 id="standorte-heading" class="text-3xl font-bold uppercase tracking-tight sm:text-4xl">
           Standorte
         </h2>
+        <p class="mt-3 max-w-2xl text-muted-foreground text-pretty sm:text-lg">
+          <strong class="font-semibold text-foreground">Erst schauen, dann losgehen.</strong>
+          Jeder Pin zeigt dir, was gerade im Automaten ist.
+        </p>
       </Reveal>
 
       <!-- once: the map never fades out mid-use. -->

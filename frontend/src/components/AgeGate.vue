@@ -59,13 +59,13 @@ function onClose() {
       tabindex="-1"
       class="text-center text-lg font-medium"
     >
-      Zutritt ab 18 Jahren. Diese Seite ist für dich nicht zugänglich.
+      Dann ist die Seite noch nichts für dich.
     </p>
     <template v-else>
       <img src="/logo.png" alt="" width="80" height="80" class="mx-auto mb-5 size-20 rounded-xl" />
       <h2 id="age-title" class="text-center text-2xl font-bold">Bist du 18 oder älter?</h2>
       <p id="age-body" class="mt-3 text-center text-muted-foreground">
-        Diese Seite zeigt Produkte, die erst ab 18 Jahren erhältlich sind.
+        Hier geht's auch um Vapes und Tabak. Die gibt's erst ab 18.
       </p>
       <div class="mt-6 flex flex-col gap-3 sm:flex-row-reverse">
         <button
@@ -81,7 +81,7 @@ function onClose() {
           class="min-h-11 min-w-0 flex-1 cursor-pointer rounded-xl border border-border px-5 py-2.5 font-semibold transition-colors duration-200 hover:bg-muted"
           @click="no"
         >
-          Nein
+          Nein, noch nicht
         </button>
       </div>
     </template>

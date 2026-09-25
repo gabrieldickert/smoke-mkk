@@ -286,31 +286,37 @@ Errors use ASP.NET's default `ProblemDetails` body. The frontend shows §6 copy,
 
 Informal *du*. No exclamation marks except the hero. Name the outcome, not the mechanism.
 
+**Copy rules (marketing pass, owner request 2026-09-25).** Short and concrete; real place names over "deine Region". None of the stock phrases that read as machine-written (`Entdecke`, `Erlebe`, `Tauche ein`, `Willkommen bei`, `Wir bieten dir`, `nahtlos`, `perfekt`, `Genuss`), no three-adjective stacks, no `Egal ob … oder …`, no emojis. Never call the stock "live": it is maintained by hand and the panel shows its `Stand`. **Tabakerzeugnisgesetz §19(3), §21:** online advertising for tobacco and e-cigarettes is banned, as is copy that plays down health risks or appeals to minors. So the pitch sells the service (open round the clock, the locations, checking stock before the walk); vapes and tobacco appear only as the factual range and product names. Owner to have this checked before launch. Payment methods and the machines' own age check are good copy once the owner confirms the facts.
+
 | Key | Text |
 |---|---|
-| html title | `SMOKE – Vapes, Drinks & Snacks aus dem Automaten` |
-| meta description | `Automaten für Vapes, Drinks und Snacks in Hessen – rund um die Uhr. Alle Standorte und der aktuelle Bestand auf einen Blick.` |
+| html title / og:title | `SMOKE Automaten – Vapes, Drinks & Snacks im Main-Kinzig-Kreis` |
+| meta description / og:description | `Vapes, Drinks und Snacks aus dem Automaten, rund um die Uhr. Alle Standorte zwischen Rodgau und Fulda, mit Bestand auf der Karte.` |
 | hero.words | `Vapes` · `Drinks` · `Snacks` (FlipWords) |
-| hero.tagline | `Rund um die Uhr. An {n} Standorten in Hessen.` (n = active machines, computed) |
+| hero.tagline | `Hat immer auf. {n} Automaten zwischen Rodgau und Fulda.` (n = active machines, computed; singular `1 Automat`) |
+| hero.cta.map | `Automat finden` (primary button, first hero CTA, jumps to `#standorte`) |
+| hero.social.lead | `Neue Standorte gibt's zuerst auf Instagram und TikTok.` (small line directly above the Instagram/TikTok CTAs) |
 | hero.cta.instagram / tiktok | `Instagram` · `TikTok` |
 | section.locations | `Standorte` |
+| section.locations.lead | `Erst schauen, dann losgehen.` (emphasised) `Jeder Pin zeigt dir, was gerade im Automaten ist.` (one paragraph under the heading) |
 | panel.title | `Aktueller Bestand` |
-| panel.empty | `Wähle einen Automaten auf der Karte oder in der Liste.` |
+| panel.empty | `Such dir einen Automaten aus. Hier steht dann, was drin ist.` |
 | panel.noStock | `Für diesen Automaten ist noch kein Bestand hinterlegt.` |
-| panel.error | `Der Bestand konnte gerade nicht geladen werden. Versuch es gleich noch einmal.` |
+| panel.error | `Der Bestand lädt gerade nicht. Versuch's gleich noch mal.` |
 | panel.updatedAt | `Stand: {datetime}` |
 | panel.summary | `{n} Produkte · {m} Artikel im Automaten` (n = items with quantity > 0, m = sum of quantities); singular `1 Produkt` / `1 Artikel`; hidden when the machine has no items |
 | skipLink | `Zum Inhalt springen` (first focusable element, visible on focus, targets `<main>`) |
 | logo.alt | `SMOKE` |
 | panel.quantity | `{qty} Stück` (0 → `0 Stück`, shown next to the `ausverkauft` badge) |
-| stock.available / low / soldOut | `verfügbar` (qty > 3) · `wenige` (1–3) · `ausverkauft` (0) |
+| stock.available / low / soldOut | `verfügbar` (qty > 3) · `fast weg` (1–3) · `ausverkauft` (0) |
 | category.Vape / Tobacco / Accessory / Drink / Snack | `Vapes` · `Tabak` · `Rauchzubehör` · `Drinks` · `Snacks` |
 | card.route | `Route` |
 | map.loadError | `Die Standorte konnten nicht geladen werden.` |
 | age.title | `Bist du 18 oder älter?` |
-| age.body | `Diese Seite zeigt Produkte, die erst ab 18 Jahren erhältlich sind.` |
-| age.yes / age.no | `Ja, ich bin 18+` · `Nein` |
-| age.denied | `Zutritt ab 18 Jahren. Diese Seite ist für dich nicht zugänglich.` |
+| age.body | `Hier geht's auch um Vapes und Tabak. Die gibt's erst ab 18.` |
+| age.yes / age.no | `Ja, ich bin 18+` · `Nein, noch nicht` |
+| age.denied | `Dann ist die Seite noch nichts für dich.` |
+| footer.claim | `SMOKE · Automaten im Main-Kinzig-Kreis und drumherum` (one muted line in the footer, above or beside the legal links) |
 | footer.imprint / privacy | `Impressum` · `Datenschutz` |
 | legal.imprint.title / privacy.title | `Impressum` · `Datenschutzerklärung` |
 | legal.todo | `TODO: Text vom Betreiber einfügen.` |
@@ -352,6 +358,7 @@ Runs once, by the PM, after both specialists have reported. A specialist's own b
 | **F2** | smokemkk-frontend | `frontend/**` — self-host Space Grotesk (`public/fonts/*.woff2`, `@font-face`, `font-display: swap`, remove every fonts.googleapis.com / fonts.gstatic.com reference); `skipLink` per §6; `panel.summary` singular forms per §6 | `npm run build` clean; `grep -r googleapis frontend/src frontend/index.html` empty; browser network tab shows no request to a Google host | F1 |
 | **B3** | smokemkk-backend | `backend/**` — `Category` enum gains `Tobacco`, `Accessory` in the §4.2 order; seed per §3 (id 3 renamed, ids 10–13 added, stock rows for all 13 on every active machine, all three stock states still on every machine) | `dotnet build -warnaserror` clean; `has-pending-model-changes` none (enum stored as text → no migration expected; if EF wants one, stop and report) | B2, §5 |
 | **F3** | smokemkk-frontend | `frontend/**` — mirror the §5 `Category` type; §6 labels; two new placeholder SVGs (tobacco, lighter); category order from §5; `public/products/README.txt` lists all 13 files | `npm run build` clean; panel shows five groups in order against the running API | §5, §6 |
+| **F5** | smokemkk-frontend | `frontend/**` — `ui-ux-pro-max` first; apply the marketing pass in §6: changed strings (title/og, meta/og description, `hero.tagline` incl. singular, `panel.empty`, `panel.error`, `stock.low`, `age.body`, `age.no`, `age.denied`) and new ones (`hero.cta.map` button, `hero.social.lead`, `section.locations.lead`, `footer.claim`); no new component, no new dependency | `npm run build` clean; `grep -rn "wenige\|Wähle einen\|Zutritt ab" frontend/src frontend/index.html` empty; browser check at 1280×800 and 375×812: button jumps to the map and keeps focus order sane, new lines readable (≥ 4.5:1), no horizontal scroll | §6 |
 | **T2** | PM | run §7; legal placeholder review; visually compare all 12 pins with the Google links; commit; update this file's status line | §7 all green | B1, F1, Docker Desktop |
 
 B1 and F1 run **in parallel** — disjoint paths, contract already fixed. The migration is created once, in B1, by the backend specialist; nobody else runs `dotnet ef`.

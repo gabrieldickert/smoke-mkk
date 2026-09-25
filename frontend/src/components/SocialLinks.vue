@@ -10,7 +10,8 @@ const links = [
 
 <template>
   <ul :class="variant === 'cta' ? 'flex flex-wrap justify-center gap-3' : 'flex items-center gap-1'">
-    <li v-for="(link, i) in links" :key="link.label">
+    <li v-for="link in links" :key="link.label">
+      <!-- cta: both secondary; the hero's one primary CTA is Automat finden (ui-ux-pro-max primary-action). -->
       <a
         :href="link.href"
         target="_blank"
@@ -19,12 +20,7 @@ const links = [
         :class="
           variant === 'icon'
             ? 'grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground'
-            : [
-                'inline-flex min-h-11 items-center gap-2 rounded-xl px-5 py-2.5 font-semibold uppercase tracking-wide transition-[background-color,box-shadow,color] duration-200',
-                i === 0
-                  ? 'bg-primary text-primary-foreground shadow-[0_0_24px_var(--glow)] hover:bg-primary/85'
-                  : 'border border-secondary/60 bg-background/60 text-foreground hover:bg-muted',
-              ]
+            : 'inline-flex min-h-11 items-center gap-2 rounded-xl border border-secondary/60 bg-background/60 px-5 py-2.5 font-semibold uppercase tracking-wide text-foreground transition-colors duration-200 hover:bg-muted'
         "
       >
         <svg

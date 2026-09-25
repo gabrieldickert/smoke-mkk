@@ -6,7 +6,7 @@ import BorderBeam from './ui/BorderBeam.vue'
 
 const props = defineProps<{ machine: Machine | null }>()
 
-// docs/PLAN.md §6: verfügbar (qty > 3) · wenige (1–3) · ausverkauft (0)
+// docs/PLAN.md §6: verfügbar (qty > 3) · fast weg (1–3) · ausverkauft (0)
 const LOW_STOCK_MAX = 3
 
 // §6 labels; key order = §5 display order (age-restricted goods first).
@@ -75,7 +75,7 @@ const updatedAt = computed(() =>
 function stock(quantity: number) {
   if (quantity === 0)
     return { label: 'ausverkauft', text: 'text-destructive-foreground', dot: 'bg-destructive' }
-  if (quantity <= LOW_STOCK_MAX) return { label: 'wenige', text: 'text-warning', dot: 'bg-warning' }
+  if (quantity <= LOW_STOCK_MAX) return { label: 'fast weg', text: 'text-warning', dot: 'bg-warning' }
   return { label: 'verfügbar', text: 'text-success', dot: 'bg-success' }
 }
 
@@ -119,10 +119,10 @@ const price = (cents: number) =>
 
           <div class="mt-4 min-h-0 flex-1 overflow-y-auto overscroll-contain">
             <p v-if="state === 'idle'" class="text-muted-foreground">
-              Wähle einen Automaten auf der Karte oder in der Liste.
+              Such dir einen Automaten aus. Hier steht dann, was drin ist.
             </p>
             <p v-else-if="state === 'error'" class="text-destructive-foreground">
-              Der Bestand konnte gerade nicht geladen werden. Versuch es gleich noch einmal.
+              Der Bestand lädt gerade nicht. Versuch's gleich noch mal.
             </p>
             <ul v-else-if="state === 'loading'" class="space-y-3" aria-hidden="true">
               <li v-for="n in 5" :key="n" class="h-14 animate-pulse rounded-lg bg-muted" />
