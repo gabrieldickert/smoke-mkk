@@ -66,7 +66,7 @@ live in `src/components/ui/` and may be edited there), git commits.
 - **Accessibility floor** (`CLAUDE.md` §5.6): native `<dialog>` for the age
   gate, keyboard-reachable cards and links, visible focus, ≥ 4.5:1 body-text
   contrast, animations (FlipWords, `<motion.li>`) off under
-  `prefers-reduced-motion`. The card grid is the text fallback for the map.
+  `prefers-reduced-motion`. The panel's machine list is the text fallback for the map.
 - **The API may be absent** while you build (Docker was not installed on the
   dev machine). Empty and error states from §6 must render; do not ship a
   mock server or fixtures to work around it.

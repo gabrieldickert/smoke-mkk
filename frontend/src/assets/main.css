@@ -165,6 +165,22 @@ html.light {
   background-image: var(--dark-gradient), var(--aurora);
 }
 
+/* TRIAL, pending the owner's verdict (docs/PLAN.md §4.3 "Aurora on all sections"): the hero's
+   one aurora layer is lifted out as a fixed backdrop behind the whole home page, instead of a copy
+   per section. The hero drops its opaque background so the layer shows through (pitch band and
+   #standorte have none); map and panel keep their own surfaces. Nothing here creates a containing
+   block for fixed elements (no transform/filter on the ancestors). Reduced motion: static via the
+   global rule below. REVERT: remove class="aurora-everywhere" on HomeView's root div and this
+   block. */
+.aurora-everywhere .aurora-brand {
+  background: transparent;
+}
+.aurora-everywhere .aurora-brand > div:first-child {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+}
+
 /* Leaflet: dark map in the brand palette (docs/PLAN.md §4.3), OSM tiles recoloured in CSS only.
    Markers are L.divIcon (MachineMap.vue). */
 .leaflet-container {
@@ -220,9 +236,38 @@ html.light {
 .leaflet-bar a:focus {
   background: var(--muted);
 }
+/* Touch: 44 px zoom buttons (leaflet.css sets 30 px; ui-ux-pro-max touch-target-size). */
+.leaflet-touch .leaflet-bar a {
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
+}
+/* Marker name tooltips (MachineMap bindTooltip), token colours instead of Leaflet's white box.
+   foreground/card 13.4:1. */
+.leaflet-container .leaflet-tooltip {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 0 16px var(--glow);
+}
+.leaflet-container .leaflet-tooltip-top::before {
+  border-top-color: var(--border);
+}
 .machine-marker {
   background: transparent;
   border: 0;
+}
+/* Visitor position (MachineMap placeYou): hover shows "Dein Standort", nothing to click. */
+.you-marker {
+  background: transparent;
+  border: 0;
+  display: grid;
+  place-items: center;
+  cursor: default;
 }
 .machine-marker:focus-visible {
   outline: 2px solid var(--ring);
@@ -271,6 +316,40 @@ html.light {
   to {
     opacity: 0;
     transform: scale(2.1);
+  }
+}
+
+/* Glowing dividers hero | pitch band | map (HomeView, docs/PLAN.md §4.3 "Glowing dividers").
+   A 2 px violet → rose → violet line fading out at both edges; the ::after glow layer pulses its
+   opacity only. Owner's exception to the no-endless-animation rule. Resting opacity is 1, so with
+   reduced motion (animation: none below) the divider stays at full glow. */
+.glow-divider {
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--primary) 20%,
+    var(--accent) 50%,
+    var(--primary) 80%,
+    transparent
+  );
+}
+.glow-divider::after {
+  content: "";
+  position: absolute;
+  inset: -6px 0; /* a blurred band around the line; the gradient's transparent ends fade it out */
+  background: linear-gradient(to right, transparent, var(--glow) 20%, var(--glow) 80%, transparent);
+  filter: blur(6px);
+  pointer-events: none;
+  opacity: 1;
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
   }
 }
 

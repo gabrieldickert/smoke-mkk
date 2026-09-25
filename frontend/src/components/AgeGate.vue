@@ -1,12 +1,18 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref } from 'vue'
+import { nextTick, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 const FLAG = 'ageConfirmed'
+// Legal pages stay reachable without confirming (CLAUDE.md §5.5, docs/PLAN.md §4.3 F10).
+const OPEN_ROUTES = new Set(['impressum', 'datenschutz'])
 
+const route = useRoute()
+const router = useRouter()
 const dialog = ref<HTMLDialogElement | null>(null)
 const deniedText = ref<HTMLParagraphElement | null>(null)
 const denied = ref(false)
-let confirmed = false
+let confirmed = isConfirmed()
+let ready = false // route.name is START_LOCATION's (undefined) until the first navigation settles
 
 function isConfirmed(): boolean {
   try {
@@ -16,9 +22,23 @@ function isConfirmed(): boolean {
   }
 }
 
-onMounted(() => {
-  if (!isConfirmed()) dialog.value?.showModal()
+// Single source of truth for open/closed. Also runs on `close`: Chrome lets a second Escape
+// through even when `cancel` is prevented, so an unconfirmed close outside the legal pages reopens.
+function sync() {
+  const d = dialog.value
+  if (!d || !ready) return
+  const shouldOpen = !confirmed && !OPEN_ROUTES.has(String(route.name))
+  if (shouldOpen && !d.open) d.showModal()
+  else if (!shouldOpen && d.open) d.close()
+}
+
+onMounted(async () => {
+  await router.isReady()
+  ready = true
+  sync()
 })
+
+watch(() => route.name, sync)
 
 function yes() {
   confirmed = true
@@ -27,7 +47,7 @@ function yes() {
   } catch {
     // storage blocked (private mode): the gate simply shows again next visit
   }
-  dialog.value?.close()
+  sync()
 }
 
 async function no() {
@@ -36,10 +56,8 @@ async function no() {
   deniedText.value?.focus()
 }
 
-// Chrome lets a second Escape through even when `cancel` is prevented; reopen.
-function onClose() {
-  if (!confirmed) dialog.value?.showModal()
-}
+const legalLink =
+  'inline-flex min-h-11 items-center rounded-md px-3 text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground'
 </script>
 
 <template>
@@ -50,7 +68,7 @@ function onClose() {
     :aria-describedby="denied ? undefined : 'age-body'"
     class="m-auto w-[min(28rem,calc(100vw-2rem))] rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-[0_0_48px_var(--glow)] backdrop:bg-background/90 backdrop:backdrop-blur-sm sm:p-8"
     @cancel.prevent
-    @close="onClose"
+    @close="sync"
   >
     <p
       v-if="denied"
@@ -62,7 +80,7 @@ function onClose() {
       Dann ist die Seite noch nichts für dich.
     </p>
     <template v-else>
-      <img src="/logo.png" alt="" width="80" height="80" class="mx-auto mb-5 size-20 rounded-xl" />
+      <img src="/logo.webp" alt="" width="80" height="80" class="mx-auto mb-5 size-20 rounded-xl" />
       <h2 id="age-title" class="text-center text-2xl font-bold">Bist du 18 oder älter?</h2>
       <p id="age-body" class="mt-3 text-center text-muted-foreground">
         Hier geht's auch um Vapes und Tabak. Die gibt's erst ab 18.
@@ -85,5 +103,11 @@ function onClose() {
         </button>
       </div>
     </template>
+    <!-- Both states: the legal pages must stay reachable from the gate. Navigating there closes it
+         (sync on route.name). -->
+    <div class="mt-5 flex justify-center gap-2">
+      <RouterLink to="/impressum" :class="legalLink">Impressum</RouterLink>
+      <RouterLink to="/datenschutz" :class="legalLink">Datenschutz</RouterLink>
+    </div>
   </dialog>
 </template>

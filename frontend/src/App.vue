@@ -1,6 +1,22 @@
 <script setup lang="ts">
+import { useReducedMotion } from 'motion-v'
+import { useRoute } from 'vue-router'
 import AgeGate from './components/AgeGate.vue'
 import SocialLinks from './components/SocialLinks.vue'
+
+const route = useRoute()
+const year = new Date().getFullYear() // §6 footer.claim
+const reduceMotion = useReducedMotion()
+
+// Already on /#standorte: the router sees a duplicate navigation and does not scroll again,
+// so scroll here (the section's scroll-mt-20 keeps it clear of the header).
+function toLocations(e: MouseEvent) {
+  if (route.path !== '/' || route.hash !== '#standorte') return
+  e.preventDefault()
+  document
+    .getElementById('standorte')
+    ?.scrollIntoView({ behavior: reduceMotion.value ? 'auto' : 'smooth', block: 'start' })
+}
 </script>
 
 <template>
@@ -15,9 +31,17 @@ import SocialLinks from './components/SocialLinks.vue'
     >
       <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <RouterLink to="/" class="rounded-lg">
-          <img src="/logo.png" alt="SMOKE" width="40" height="40" class="size-10 rounded-lg" />
+          <img src="/logo.webp" alt="SMOKE" width="40" height="40" class="size-10 rounded-lg" />
         </RouterLink>
-        <SocialLinks variant="icon" />
+        <div class="flex items-center gap-1">
+          <RouterLink
+            :to="{ path: '/', hash: '#standorte' }"
+            class="inline-flex min-h-11 items-center rounded-lg px-3 font-semibold text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground"
+            @click="toLocations"
+            >Standorte</RouterLink
+          >
+          <SocialLinks variant="icon" />
+        </div>
       </div>
     </header>
 
@@ -34,7 +58,8 @@ import SocialLinks from './components/SocialLinks.vue'
         class="mx-auto flex max-w-6xl flex-col items-center gap-1 px-4 py-6 text-sm sm:flex-row sm:justify-between"
       >
         <p class="text-center text-muted-foreground text-balance">
-          SMOKE · Automaten im <span class="whitespace-nowrap">Main-Kinzig-Kreis</span> und drumherum
+          &copy; {{ year }} Smoke MKK -
+          <span class="whitespace-nowrap">Vapes, Drinks, Snacks &amp; More!</span>
         </p>
         <nav class="flex flex-wrap items-center justify-center gap-2">
           <RouterLink

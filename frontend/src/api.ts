@@ -46,3 +46,7 @@ export const fetchMachines = (signal?: AbortSignal) =>
 
 export const fetchInventory = (machineId: number, signal?: AbortSignal) =>
   getJson<Inventory>(`/api/machines/${machineId}/inventory`, signal);
+
+// docs/PLAN.md §6 "machine display name": the name without its leading "SMOKE " (the header
+// carries the brand), wherever a machine is named in the UI.
+export const placeName = (m: Pick<Machine, "name">) => m.name.replace(/^SMOKE\s+/i, "");

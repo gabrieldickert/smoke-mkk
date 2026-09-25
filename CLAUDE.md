@@ -90,8 +90,8 @@ Operator workflow for stock (until phase 2): `PUT /api/machines/{id}/inventory` 
 2. **The PUT is a trust boundary.** Validate every field, compare the API key in constant time, return `503` when the key is not configured (never "open"), never log the key. This is the one place where phase 1 is not lazy.
 3. **The skipped list (§10) is binding.** No Pinia, no vue-leaflet, no shadcn-vue, no Iconify, no test framework, no extra runtime dependency without a PM decision written into the plan. Vue + Tailwind + the listed packages cover phase 1.
 4. **Frontend work goes through `ui-ux-pro-max`.** Every frontend ticket, not only the first — the skill is the design method, not a one-off palette picker.
-5. **Legal floor.** `Impressum` and `Datenschutz` reachable from every page; visible OpenStreetMap attribution on the map; the 18+ dialog on first visit. These are not polish.
-6. **Accessibility floor.** Native `<dialog>`, keyboard-reachable cards/links, visible focus, ≥ 4.5:1 text contrast on the dark palette, animations off under `prefers-reduced-motion`. The card grid is the text fallback for the map.
+5. **Legal floor.** `Impressum` and `Datenschutz` reachable from every page, the age gate included (it stays closed on the legal pages); visible OpenStreetMap attribution on the map; the 18+ dialog on first visit. These are not polish.
+6. **Accessibility floor.** Native `<dialog>`, keyboard-reachable markers/list/links, visible focus, ≥ 4.5:1 text contrast on the dark palette, animations off under `prefers-reduced-motion`. The machine list in the inventory panel is the text fallback for the map.
 7. **Secrets stay out of git.** `.env` is ignored; `.env.example` carries names only. Only `web` publishes a host port.
 8. **Seed never overwrites.** Startup seeding runs only on an empty `Machines` table; operator edits survive every restart and migration. `HasData` is banned for this reason.
 9. **Minimal by design.** Records next to endpoints, one `Program.cs`, raw Leaflet in one component, plain fetch. A deliberate corner with a known ceiling carries a `// ponytail:` comment naming the ceiling and the upgrade path.
