@@ -1,0 +1,201 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Inspira "Other TailwindCSS Kit" token block. The only place colours live.
+ * :root keeps Inspira's light values (never shown: <html class="dark"> is permanent).
+ * .dark carries the SMOKE neon palette, from ui-ux-pro-max colour result "Gaming"
+ * (neon purple + rose on #0F0F23), tuned to the logo (violet -> pink -> peach).
+ * Contrast (WCAG): foreground/background 15.3:1, foreground/card 13.4:1,
+ * muted-foreground/card 6.4:1, secondary/card 6.1:1, white/primary 5.7:1,
+ * black/accent 5.7:1, success/card 9.5:1, warning/card 9.9:1, destructive-foreground/card 6.1:1.
+ * Rose (--accent) is a fill only (4.49:1 as text on card).
+ */
+:root {
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.141 0.005 285.823);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.141 0.005 285.823);
+  --primary: oklch(0.21 0.006 285.885);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.967 0.001 286.375);
+  --muted-foreground: oklch(0.552 0.016 285.938);
+  --accent: oklch(0.967 0.001 286.375);
+  --accent-foreground: oklch(0.21 0.006 285.885);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.577 0.245 27.325);
+  --border: oklch(0.92 0.004 286.32);
+  --input: oklch(0.92 0.004 286.32);
+  --ring: oklch(0.705 0.015 286.067);
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.141 0.005 285.823);
+}
+
+.dark {
+  --background: #0f0f23;
+  --foreground: #e2e8f0;
+  --card: #1e1c35;
+  --card-foreground: #e2e8f0;
+  --popover: #1e1c35;
+  --popover-foreground: #e2e8f0;
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  --secondary: #a78bfa;
+  --secondary-foreground: #0f172a;
+  --muted: #27273b;
+  --muted-foreground: #94a3b8;
+  --accent: #f43f5e;
+  --accent-foreground: #000000;
+  --destructive: #ef4444;
+  --destructive-foreground: #fb7185;
+  --border: #3b2a6b;
+  --input: #3b2a6b;
+  --ring: #a78bfa;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --spotlight: rgb(124 58 237 / 0.35);
+  --glow: rgb(167 139 250 / 0.45);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-glow: var(--glow);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+
+  /* AuroraBackground #instructions */
+  --animate-aurora: aurora 60s linear infinite;
+  @keyframes aurora {
+    from {
+      background-position:
+        50% 50%,
+        50% 50%;
+    }
+    to {
+      background-position:
+        350% 50%,
+        350% 50%;
+    }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+}
+
+html {
+  color-scheme: light dark;
+}
+html.dark {
+  color-scheme: dark;
+}
+html.light {
+  color-scheme: light;
+}
+
+/* Recolours the copied AuroraBackground to the brand without editing it:
+   its colour variables are inline styles, which only !important can override.
+   Stops stay violet/rose: the layer is difference-blended, so peach would show up as green. */
+.aurora-brand > div {
+  --blue-500: var(--primary) !important;
+  --indigo-300: var(--accent) !important;
+  --blue-300: var(--secondary) !important;
+  --violet-200: var(--primary) !important;
+  --blue-400: var(--accent) !important;
+}
+/* Upstream bug: the component's `after:dark:[background-image:…]` compiles to an invalid
+   selector in Tailwind 4 (`::after:is(.dark *)`), so the ::after keeps the white stripes. */
+.aurora-brand > div > div::after {
+  background-image: var(--dark-gradient), var(--aurora);
+}
+
+/* Leaflet: dark tiles to match the theme; markers are L.divIcon (MachineMap.vue). */
+.leaflet-container {
+  background: var(--muted);
+  font-family: inherit;
+}
+.map-dark .leaflet-tile-pane {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
+.leaflet-container .leaflet-control-attribution {
+  background: color-mix(in srgb, var(--card) 90%, transparent);
+  color: var(--muted-foreground);
+}
+.leaflet-container .leaflet-control-attribution a {
+  color: var(--secondary);
+}
+.leaflet-bar a,
+.leaflet-bar a:hover {
+  background: var(--card);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+.machine-marker {
+  background: transparent;
+  border: 0;
+}
+
+/* Route change fade (App.vue <Transition name="fade" mode="out-in">). */
+.fade-enter-active {
+  transition: opacity 200ms ease-out;
+}
+.fade-leave-active {
+  transition: opacity 200ms ease-in;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

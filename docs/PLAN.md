@@ -162,6 +162,13 @@ Own components:
 - `LegalView.vue` — one component, `route.name` decides Impressum vs. Datenschutz; placeholder texts marked `TODO`; Datenschutz must mention OSM tile requests (IP to openstreetmap.org), the `localStorage` age flag, and the Instagram/TikTok links.
 - SEO basics only: `lang="de"`, `<title>`, `meta description`, OG tags, `robots.txt` (allow all). No pre-rendering.
 
+**F1 outcomes accepted by the PM (2026-09-25).**
+- Brand look from `ui-ux-pro-max`: dark OLED base `#0F0F23`, neon violet `#7C3AED` + rose `#F43F5E`, card `#1E1C35`, Space Grotesk uppercase display type. Rose is a fill colour only (4.49:1 as text is below the floor).
+- Inspira edits allowed and kept: `AuroraBackground` root is a `<div>` (no nested `<main>`); `FlipWords` has `?? ""` guards for `noUncheckedIndexedAccess`; aurora colours and its Tailwind-4 selector bug are handled in `main.css`; `BorderBeam` gets an explicit `duration`.
+- `SocialLinks.vue` (shared Instagram/TikTok SVGs) and the dev-only `vite-plugin-vue-devtools` from the scaffold are accepted.
+- **Fonts are self-hosted** (`public/fonts/*.woff2` + `@font-face`), never loaded from fonts.googleapis.com: German courts have held that the Google Fonts CDN leaks visitor IPs without consent (LG München I, 2022). Space Grotesk is under the SIL Open Font License, so shipping the files is allowed.
+- Dev port is **5174**: 5173 is taken by another project on the dev machine.
+
 **Section transitions (owner request, 2026-09-25).** Sections fade in as they scroll into view and fade out as they leave. Built with motion-v only, no new dependency:
 - One wrapper component `components/Reveal.vue`: `<motion.div :initial="{ opacity: 0, y: 24 }" :while-in-view="{ opacity: 1, y: 0 }" :in-view-options="{ once: false, amount: 0.2 }" :transition="{ duration: 0.5, ease: 'easeOut' }">`. `once: false` gives the fade-out when a section leaves the viewport.
 - Wrap each home section with it: hero content, the "Standorte" heading, the map + panel block, and the card grid.
@@ -209,7 +216,7 @@ server {
 
 Dockerfiles are standard two-stage builds. Frontend: `node:24-alpine` → `npm ci && npm run build` → `nginx:alpine` with `nginx.conf` at `/etc/nginx/conf.d/default.conf` and `dist/` at `/usr/share/nginx/html`. Backend: `mcr.microsoft.com/dotnet/sdk:10.0` → `dotnet publish -c Release -o /out` → `mcr.microsoft.com/dotnet/aspnet:10.0`, `ENTRYPOINT ["dotnet","SmokeMkk.Api.dll"]`. Do **not** set `ASPNETCORE_URLS`; the image listens on 8080.
 
-Local dev without the full stack: `docker compose up db -d`, then `dotnet run --project backend` (port 5000) and `npm run dev --prefix frontend` (port 5173, proxies `/api`).
+Local dev without the full stack: `docker compose up db -d`, then `dotnet run --project backend` (port 5000) and `npm run dev --prefix frontend -- --port 5174` (proxies `/api`).
 
 ## 5. API contract — the bytes both specialists implement
 
@@ -278,7 +285,9 @@ Informal *du*. No exclamation marks except the hero. Name the outcome, not the m
 | panel.noStock | `Für diesen Automaten ist noch kein Bestand hinterlegt.` |
 | panel.error | `Der Bestand konnte gerade nicht geladen werden. Versuch es gleich noch einmal.` |
 | panel.updatedAt | `Stand: {datetime}` |
-| panel.summary | `{n} Produkte · {m} Artikel im Automaten` (n = items with quantity > 0, m = sum of quantities) |
+| panel.summary | `{n} Produkte · {m} Artikel im Automaten` (n = items with quantity > 0, m = sum of quantities); singular `1 Produkt` / `1 Artikel`; hidden when the machine has no items |
+| skipLink | `Zum Inhalt springen` (first focusable element, visible on focus, targets `<main>`) |
+| logo.alt | `SMOKE` |
 | panel.quantity | `{qty} Stück` (0 → `0 Stück`, shown next to the `ausverkauft` badge) |
 | stock.available / low / soldOut | `verfügbar` (qty > 3) · `wenige` (1–3) · `ausverkauft` (0) |
 | category.Vape / Drink / Snack | `Vapes` · `Drinks` · `Snacks` |

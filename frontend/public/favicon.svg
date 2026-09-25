@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#A78BFA"/>
+      <stop offset="0.6" stop-color="#F43F5E"/>
+      <stop offset="1" stop-color="#F5A65B"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#0F0F23"/>
+  <text x="32" y="46" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="42" fill="url(#g)">S</text>
+</svg>

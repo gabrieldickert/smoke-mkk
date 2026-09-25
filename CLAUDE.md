@@ -64,7 +64,7 @@ docker-compose.yml   db (postgres:17-alpine) · api (:8080 internal) · web (ngi
 .claude/agents/      smokemkk-pm.md, smokemkk-backend.md, smokemkk-frontend.md
 .claude/skills/      ui-ux-pro-max (project skill)
 .claude/settings.json  plugins: claude-seo, agent-skills
-.claude/launch.json  web-dev (Vite :5173), api-dev (dotnet :5000) for the browser preview
+.claude/launch.json  web-dev (Vite :5174), api-dev (dotnet :5000) for the browser preview
 ```
 
 ## 4. Commands
@@ -73,7 +73,7 @@ docker-compose.yml   db (postgres:17-alpine) · api (:8080 internal) · web (ngi
 docker compose up --build -d          # the whole stack → http://localhost
 docker compose up db -d               # Postgres only, for local dev
 dotnet run --project backend          # API on http://localhost:5000 (needs Postgres)
-npm run dev --prefix frontend         # Vite on http://localhost:5173, proxies /api → :5000
+npm run dev --prefix frontend -- --port 5174   # Vite on http://localhost:5174, proxies /api → :5000
 npm run build --prefix frontend       # includes vue-tsc typecheck
 dotnet build backend -warnaserror
 ```

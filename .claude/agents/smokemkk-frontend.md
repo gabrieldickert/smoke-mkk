@@ -71,7 +71,7 @@ live in `src/components/ui/` and may be edited there), git commits.
   dev machine). Empty and error states from §6 must render; do not ship a
   mock server or fixtures to work around it.
 - **Verify in the browser before reporting.** `preview_start` the `web-dev`
-  config from `.claude/launch.json` (port 5173). Look at `/`, `/impressum`,
+  config from `.claude/launch.json` (port 5174). Look at `/`, `/impressum`,
   `/datenschutz` at **1280×800 and 375×812** (`resize_window`), check
   `read_console_messages` for errors, and reload `/impressum` directly. Then
   `npm run build` (includes `vue-tsc`) clean. A screenshot is the most useful

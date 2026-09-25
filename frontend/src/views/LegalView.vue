@@ -1,0 +1,22 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+const isImprint = computed(() => route.name === 'impressum')
+</script>
+
+<template>
+  <article class="mx-auto max-w-3xl px-4 py-16">
+    <h1 class="text-3xl font-bold uppercase tracking-tight sm:text-4xl">
+      {{ isImprint ? 'Impressum' : 'Datenschutzerklärung' }}
+    </h1>
+    <!--
+      TODO (operator): replace with the real legal text.
+      Datenschutz must cover (docs/PLAN.md §4.3): OpenStreetMap tile requests (visitor IP goes to
+      openstreetmap.org), the localStorage flag "ageConfirmed" set by the 18+ dialog, and the outbound
+      Instagram/TikTok links. Also: Google Fonts is loaded from fonts.googleapis.com (IP to Google).
+    -->
+    <p class="mt-6 text-muted-foreground">TODO: Text vom Betreiber einfügen.</p>
+  </article>
+</template>

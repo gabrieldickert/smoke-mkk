@@ -21,7 +21,7 @@ Open http://localhost.
 ```powershell
 docker compose up db -d
 dotnet run --project backend          # http://localhost:5000
-npm run dev --prefix frontend         # http://localhost:5173, proxies /api
+npm run dev --prefix frontend -- --port 5174   # http://localhost:5174, proxies /api
 ```
 
 For `dotnet run`, set the connection string and key in your shell, for example:
