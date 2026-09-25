@@ -14,3 +14,6 @@ obj/
 
 # local tooling
 .claude/settings.local.json
+
+# python
+__pycache__/
