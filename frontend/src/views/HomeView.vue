@@ -131,6 +131,37 @@ function jumpToMap() {
       </Reveal>
     </AuroraBackground>
 
+    <!-- Pitch band (F9): the break between hero and map. Thin violet gradient rules top and
+         bottom plus a soft radial glow, all from existing tokens; no image, no new component. -->
+    <section
+      aria-labelledby="pitch-heading"
+      class="relative isolate overflow-hidden px-4 py-20 sm:py-28"
+    >
+      <div
+        aria-hidden="true"
+        class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent"
+      />
+      <div
+        aria-hidden="true"
+        class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,var(--spotlight),transparent_65%)] opacity-60"
+      />
+      <div
+        aria-hidden="true"
+        class="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-border to-transparent"
+      />
+      <Reveal class="mx-auto max-w-[40rem] text-center">
+        <h2
+          id="pitch-heading"
+          class="text-3xl font-bold uppercase tracking-tight text-balance sm:text-5xl"
+        >
+          Spät dran? <span class="text-secondary [text-shadow:0_0_28px_var(--glow)]">Wir nicht.</span>
+        </h2>
+        <p class="mt-6 text-lg leading-relaxed text-foreground/85 text-pretty sm:text-xl">
+          Tanke zu, Kiosk zu, Kühlschrank leer? Unsere Automaten haben trotzdem auf. Kalte Drinks, Snacks und der Rest vom Sortiment, auch sonntags und nachts um drei.
+        </p>
+      </Reveal>
+    </section>
+
     <section
       id="standorte"
       ref="mapSection"
