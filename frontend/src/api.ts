@@ -1,6 +1,6 @@
 // Types mirror docs/PLAN.md §5 verbatim. Do not add fields here; the contract is the PM's.
 
-export type Category = "Vape" | "Drink" | "Snack";
+export type Category = "Vape" | "Tobacco" | "Accessory" | "Drink" | "Snack";
 
 export interface Machine {
   id: number;
@@ -26,7 +26,7 @@ export interface InventoryItem {
 export interface Inventory {
   machineId: number;
   updatedAt: string | null;   // max(updated_at) over items; null when no items
-  items: InventoryItem[];     // sorted by category (Vape, Drink, Snack), then name
+  items: InventoryItem[];     // sorted by category (Vape, Tobacco, Accessory, Drink, Snack), then name
 }
 
 export interface InventoryWrite {   // PUT body element

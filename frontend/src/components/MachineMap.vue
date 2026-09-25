@@ -15,7 +15,7 @@ const markers = new Map<number, L.Marker>()
 const FALLBACK_CENTER: L.LatLngExpression = [50.3, 9.3]
 
 const DOT =
-  'block size-4 rounded-full border-2 border-foreground bg-primary shadow-[0_0_12px_4px_var(--glow)]'
+  'block size-4 rounded-full border-2 border-foreground bg-secondary shadow-[0_0_14px_5px_var(--glow)]'
 const DOT_SELECTED =
   'block size-6 rounded-full border-2 border-foreground bg-accent shadow-[0_0_18px_6px_var(--glow)] ring-4 ring-accent/40'
 

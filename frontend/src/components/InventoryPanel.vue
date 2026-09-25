@@ -9,8 +9,11 @@ const props = defineProps<{ machine: Machine | null }>()
 // docs/PLAN.md §6: verfügbar (qty > 3) · wenige (1–3) · ausverkauft (0)
 const LOW_STOCK_MAX = 3
 
+// §6 labels; key order = §5 display order (age-restricted goods first).
 const CATEGORY_LABEL: Record<Category, string> = {
   Vape: 'Vapes',
+  Tobacco: 'Tabak',
+  Accessory: 'Rauchzubehör',
   Drink: 'Drinks',
   Snack: 'Snacks',
 }
@@ -129,8 +132,9 @@ const price = (cents: number) =>
                 Für diesen Automaten ist noch kein Bestand hinterlegt.
               </p>
               <section v-for="group in groups" :key="group.category" class="mb-5 last:mb-0">
+                <!-- Sticky inside the panel's scroll box, so five groups stay orientable (ui-ux-pro-max). -->
                 <h4
-                  class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground"
+                  class="sticky top-0 z-10 mb-1 bg-card py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground"
                 >
                   {{ group.label }}
                 </h4>
@@ -182,8 +186,20 @@ const price = (cents: number) =>
                           <path d="M10 7V4.5a1.5 1.5 0 0 1 1.5-1.5h1A1.5 1.5 0 0 1 14 4.5V7" />
                           <path d="M11 18h2" />
                         </template>
+                        <!-- Tobacco: cigarette pack -->
+                        <template v-else-if="item.category === 'Tobacco'">
+                          <path d="M6 9h12v11.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 20.5z" />
+                          <path d="M6 13h12M9 9V4.5h2V9M13 9V3.5h2V9" />
+                        </template>
+                        <!-- Accessory: lighter -->
+                        <template v-else-if="item.category === 'Accessory'">
+                          <rect x="8" y="11" width="8" height="11" rx="1.5" />
+                          <path d="M8 11V9h5v2" />
+                          <circle cx="15" cy="9" r="1.6" />
+                          <path d="M10.5 1.5c-1.6 1.7-1.6 3.4 0 4.6 1.6-1.2 1.6-2.9 0-4.6z" />
+                        </template>
                         <!-- Snack: bag -->
-                        <template v-else>
+                        <template v-else-if="item.category === 'Snack'">
                           <path d="M6 3h12l-1.5 3L18 9v10l1 2H5l1-2V9l1.5-3z" />
                           <path d="M7.5 6h9M9 13.5c1.5-1.5 4.5-1.5 6 0" />
                         </template>

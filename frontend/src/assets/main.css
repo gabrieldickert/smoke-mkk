@@ -72,6 +72,7 @@
   --warning: #fbbf24;
   --spotlight: rgb(124 58 237 / 0.35);
   --glow: rgb(167 139 250 / 0.45);
+  --map-tint: #3b2a6b;
 }
 
 @theme inline {
@@ -159,13 +160,29 @@ html.light {
   background-image: var(--dark-gradient), var(--aurora);
 }
 
-/* Leaflet: dark tiles to match the theme; markers are L.divIcon (MachineMap.vue). */
+/* Leaflet: dark map in the brand palette (docs/PLAN.md §4.3), OSM tiles recoloured in CSS only.
+   Markers are L.divIcon (MachineMap.vue). */
 .leaflet-container {
-  background: var(--muted);
+  background: var(--background); /* no grey flash while tiles load */
   font-family: inherit;
 }
 .map-dark .leaflet-tile-pane {
-  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+  filter: grayscale(1) invert(1) brightness(0.5) contrast(1.4);
+}
+/* Brand tint between the tile pane (z 200) and the overlay/marker panes (z 400/600).
+   Lives inside .leaflet-map-pane (its own stacking context), so it blends with tiles only and
+   never covers markers, popups or controls. Oversized so panning never reveals an edge. */
+.map-dark .leaflet-map-pane::before {
+  content: "";
+  position: absolute;
+  top: -50000px;
+  left: -50000px;
+  width: 100000px;
+  height: 100000px;
+  z-index: 250;
+  pointer-events: none;
+  background: var(--map-tint);
+  mix-blend-mode: color;
 }
 .leaflet-container .leaflet-control-attribution {
   background: color-mix(in srgb, var(--card) 90%, transparent);
@@ -174,11 +191,17 @@ html.light {
 .leaflet-container .leaflet-control-attribution a {
   color: var(--secondary);
 }
+.leaflet-bar {
+  border-color: var(--border) !important;
+}
 .leaflet-bar a,
 .leaflet-bar a:hover {
   background: var(--card);
   color: var(--foreground);
   border-color: var(--border);
+}
+.leaflet-bar a:hover {
+  background: var(--muted);
 }
 .machine-marker {
   background: transparent;
