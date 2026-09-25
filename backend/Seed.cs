@@ -32,17 +32,21 @@ public static class Seed
         [
             (new() { Id = 1, Name = "Elf Bar 600 Blueberry Ice", Category = Category.Vape, ImageUrl = "/products/elfbar-600-blueberry-ice.webp" }, 1299),
             (new() { Id = 2, Name = "Elf Bar 600 Watermelon", Category = Category.Vape, ImageUrl = "/products/elfbar-600-watermelon.webp" }, 1199),
-            (new() { Id = 3, Name = "VELO Freeze Mint", Category = Category.Vape, ImageUrl = "/products/velo-freeze-mint.webp" }, 899),
+            (new() { Id = 3, Name = "Elf Bar 600 Cola", Category = Category.Vape, ImageUrl = "/products/elfbar-600-cola.webp" }, 899),
             (new() { Id = 4, Name = "Red Bull Energy Drink 250 ml", Category = Category.Drink, ImageUrl = "/products/red-bull-250.webp" }, 299),
             (new() { Id = 5, Name = "Coca-Cola Zero 330 ml", Category = Category.Drink, ImageUrl = "/products/coca-cola-zero-330.webp" }, 350),
             (new() { Id = 6, Name = "Vio Wasser still 500 ml", Category = Category.Drink, ImageUrl = "/products/vio-still-500.webp" }, 250),
             (new() { Id = 7, Name = "Snickers", Category = Category.Snack, ImageUrl = "/products/snickers.webp" }, 150),
             (new() { Id = 8, Name = "Haribo Goldbären 100 g", Category = Category.Snack, ImageUrl = "/products/haribo-goldbaeren-100.webp" }, 199),
             (new() { Id = 9, Name = "Pringles Paprika 40 g", Category = Category.Snack, ImageUrl = "/products/pringles-paprika-40.webp" }, 250),
+            (new() { Id = 10, Name = "Marlboro Red 20 Stück", Category = Category.Tobacco, ImageUrl = "/products/marlboro-red-20.webp" }, 1100),
+            (new() { Id = 11, Name = "Pueblo Classic Tabak 30 g", Category = Category.Tobacco, ImageUrl = "/products/pueblo-classic-30.webp" }, 995),
+            (new() { Id = 12, Name = "OCB Slim Premium Papers", Category = Category.Accessory, ImageUrl = "/products/ocb-slim-premium.webp" }, 150),
+            (new() { Id = 13, Name = "Clipper Feuerzeug", Category = Category.Accessory, ImageUrl = "/products/clipper-feuerzeug.webp" }, 250),
         ];
 
         // Rotated per machine: every machine shows all three stock states (>3, 1–3, 0).
-        int[] quantities = [7, 5, 0, 12, 2, 8, 6, 0, 3];
+        int[] quantities = [7, 5, 0, 12, 2, 8, 6, 0, 3, 9, 1, 4, 10];
         var now = DateTime.UtcNow;
 
         db.Machines.AddRange(machines);

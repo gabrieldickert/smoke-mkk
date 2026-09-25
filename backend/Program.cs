@@ -60,7 +60,7 @@ app.MapGet("/api/machines/{id:int}/inventory", async (int id, AppDb db) =>
         .Select(i => new { i.ProductId, i.Product.Name, i.Product.Category, i.Product.ImageUrl, i.Quantity, i.PriceCents, i.UpdatedAt })
         .ToListAsync();
 
-    // Category is stored as a string, so enum order (Vape, Drink, Snack) is applied here; OrderBy is stable, keeping name order.
+    // Category is stored as a string, so enum declaration order (Vape, Tobacco, Accessory, Drink, Snack) is applied here; OrderBy is stable, keeping name order.
     var items = rows
         .OrderBy(r => r.Category)
         .Select(r => new InventoryItemDto(r.ProductId, r.Name, r.Category, r.ImageUrl, r.Quantity, r.PriceCents))

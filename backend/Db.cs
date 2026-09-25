@@ -3,7 +3,8 @@ using Microsoft.EntityFrameworkCore.Design;
 
 namespace SmokeMkk.Api;
 
-public enum Category { Vape, Drink, Snack }
+// Declaration order is the display and sort order of inventory items (docs/PLAN.md §3, §5).
+public enum Category { Vape, Tobacco, Accessory, Drink, Snack }
 
 public class Machine
 {

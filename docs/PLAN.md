@@ -64,17 +64,23 @@ Google-Maps URLs for the `google_maps_url` column. #1–#4 use `https://www.goog
 |---|---|---|---|
 | 1 | Elf Bar 600 Blueberry Ice | Vape | `/products/elfbar-600-blueberry-ice.webp` |
 | 2 | Elf Bar 600 Watermelon | Vape | `/products/elfbar-600-watermelon.webp` |
-| 3 | VELO Freeze Mint | Vape | `/products/velo-freeze-mint.webp` |
+| 3 | Elf Bar 600 Cola | Vape | `/products/elfbar-600-cola.webp` |
 | 4 | Red Bull Energy Drink 250 ml | Drink | `/products/red-bull-250.webp` |
 | 5 | Coca-Cola Zero 330 ml | Drink | `/products/coca-cola-zero-330.webp` |
 | 6 | Vio Wasser still 500 ml | Drink | `/products/vio-still-500.webp` |
 | 7 | Snickers | Snack | `/products/snickers.webp` |
 | 8 | Haribo Goldbären 100 g | Snack | `/products/haribo-goldbaeren-100.webp` |
 | 9 | Pringles Paprika 40 g | Snack | `/products/pringles-paprika-40.webp` |
+| 10 | Marlboro Red 20 Stück | Tobacco | `/products/marlboro-red-20.webp` |
+| 11 | Pueblo Classic Tabak 30 g | Tobacco | `/products/pueblo-classic-30.webp` |
+| 12 | OCB Slim Premium Papers | Accessory | `/products/ocb-slim-premium.webp` |
+| 13 | Clipper Feuerzeug | Accessory | `/products/clipper-feuerzeug.webp` |
+
+**Categories (owner, 2026-09-25):** Smoke MKK sells five: Vapes, Tabak, Rauchzubehör, Drinks, Snacks. Wire values `Vape | Tobacco | Accessory | Drink | Snack`, in that order, which is also the display and sort order (age-restricted goods first). Prices for the new seed rows: tobacco 950–1100, accessories 150–350 cents. VELO nicotine pouches were dropped from the placeholder: nicotine pouches are not legally sold in Germany.
 
 **Product images.** `image_url` is a site-relative path; the file lives in `frontend/public/products/`. Brand packshots are copyrighted, so **nobody downloads them from the web**. The owner supplies real photos (own photos of the machine stock, or packshots from their wholesaler with usage rights), saved under exactly these file names as square WebP, about 400×400. Until a file exists, the frontend shows a category placeholder (§4.3), so the site never shows a broken image.
 
-Seed stock: every active machine gets all 9 products; quantities vary so that all three display states (§6) appear on every machine (e.g. `7, 5, 0, 12, 2, 8, 6, 0, 3`), `price_cents` plausible (vapes 899–1299, drinks 250–350, snacks 150–250), `updated_at` = seed time.
+Seed stock: every active machine gets all 13 products; quantities rotate per machine through `7, 5, 0, 12, 2, 8, 6, 0, 3, 9, 1, 4, 10` so all three display states (§6) appear on every machine; `price_cents` plausible (vapes 899–1299, tobacco 950–1100, accessories 150–350, drinks 250–350, snacks 150–250); `updated_at` = seed time.
 
 ## 4. Architecture
 
@@ -122,7 +128,7 @@ C:\smokemkk\
 Entities (EF defaults, no naming plugin):
 
 - `Machine(Id, Slug, Name, Street, PostalCode, City, Lat, Lng, IsActive, GoogleMapsUrl)` — `Slug` unique
-- `Product(Id, Name, Category, ImageUrl)` — `ImageUrl` is a nullable site-relative path (§3); `Category` is a C# enum `Vape | Drink | Snack` stored as string (`HasConversion<string>()`), so a later age filter is a WHERE clause
+- `Product(Id, Name, Category, ImageUrl)` — `ImageUrl` is a nullable site-relative path (§3); `Category` is a C# enum `Vape | Tobacco | Accessory | Drink | Snack` (this declaration order is the sort order) stored as string (`HasConversion<string>()`), so a later age filter is a WHERE clause
 - `MachineInventory(MachineId, ProductId, Quantity, PriceCents, UpdatedAt)` — composite PK; `Quantity >= 0` and `PriceCents >= 0` as check constraints
 
 Rules:
@@ -155,7 +161,7 @@ and apply the `#instructions` block of the matching doc `content/en/2.components
 
 Own components:
 - `MachineMap.vue` — raw Leaflet in `onMounted` on a `ref` div, destroyed in `onUnmounted`. Tiles `https://tile.openstreetmap.org/{z}/{x}/{y}.png` with attribution `&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende` (mandatory; swap to CARTO Voyager is a one-line URL change if traffic grows). Markers via `L.divIcon` with a Tailwind-styled class (avoids Leaflet's broken default-icon paths under Vite). `fitBounds` over all machines with padding. Props `machines`, `selectedId`; emits `select(id)`. Selected marker gets a distinct class.
-- `InventoryPanel.vue` — prop `machine | null`; loads inventory on change; groups by category. Each item is a row or tile with the **product image** (`<img :src="imageUrl" :alt="name" loading="lazy" width height>` in a fixed square box, `object-contain`), name, price, the **quantity as a number** (`panel.quantity`) and the stock state badge per §6 thresholds (one const). The panel header shows `panel.summary` for the selected machine. Image fallback: when `imageUrl` is null or the `<img>` fires `error`, show a category placeholder instead — one inline SVG per category (can, vape, snack bag) in the brand colours, no image library. Sold-out items stay listed, their image desaturated (`grayscale opacity-60`); price `(priceCents/100).toLocaleString("de-DE", {style:"currency", currency:"EUR"})`; "Stand" from `updatedAt` via `toLocaleString("de-DE")`. Items fade in with `<motion.li>` from motion-v (`initial/animate`), guarded by `useReducedMotion` from motion-v — no animation when the OS asks for reduced motion.
+- `InventoryPanel.vue` — prop `machine | null`; loads inventory on change; groups by category. Each item is a row or tile with the **product image** (`<img :src="imageUrl" :alt="name" loading="lazy" width height>` in a fixed square box, `object-contain`), name, price, the **quantity as a number** (`panel.quantity`) and the stock state badge per §6 thresholds (one const). The panel header shows `panel.summary` for the selected machine. Image fallback: when `imageUrl` is null or the `<img>` fires `error`, show a category placeholder instead — one inline SVG per category (vape, tobacco pouch or cigarette pack, lighter, can, snack bag) in the brand colours, no image library. Sold-out items stay listed, their image desaturated (`grayscale opacity-60`); price `(priceCents/100).toLocaleString("de-DE", {style:"currency", currency:"EUR"})`; "Stand" from `updatedAt` via `toLocaleString("de-DE")`. Items fade in with `<motion.li>` from motion-v (`initial/animate`), guarded by `useReducedMotion` from motion-v — no animation when the OS asks for reduced motion.
 - `MachineCard.vue` — wraps `CardSpotlight`; name, address, "Route" link (`google_maps_url`, `target="_blank" rel="noopener"`), click selects on the map and scrolls the map into view.
 - `AgeGate.vue` — native `<dialog>`; `showModal()` in `onMounted` unless `localStorage.getItem("ageConfirmed") === "1"` (wrap storage access in try/catch). "Ja" → set flag, `close()`. "Nein" → swap content to the denial text, keep open. `Escape` disabled (`@cancel.prevent`). Tailwind only.
 - `HomeView.vue` — `AuroraBackground` hero (logo, `FlipWords`, tagline, Instagram/TikTok CTAs) → section "Standorte": map left / `InventoryPanel` right (stacked below `md`) → `MachineCard` grid (the accessibility/SEO text fallback for the map). Empty/error states per §6.
@@ -168,6 +174,14 @@ Own components:
 - `SocialLinks.vue` (shared Instagram/TikTok SVGs) and the dev-only `vite-plugin-vue-devtools` from the scaffold are accepted.
 - **Fonts are self-hosted** (`public/fonts/*.woff2` + `@font-face`), never loaded from fonts.googleapis.com: German courts have held that the Google Fonts CDN leaks visitor IPs without consent (LG München I, 2022). Space Grotesk is under the SIL Open Font License, so shipping the files is allowed.
 - Dev port is **5174**: 5173 is taken by another project on the dev machine.
+
+**Dark map in the brand palette (owner request, 2026-09-25).** The F1 filter (`invert + hue-rotate`) leaves green forests and red roads, which clash with the violet/rose palette. Keep the OSM tiles (no new third party receiving visitor IPs, no Datenschutz change) and recolour them in CSS only:
+- Tile pane: `filter: grayscale(1) invert(1) brightness(0.55) contrast(1.25)`, which gives a neutral near-black map with light-grey roads and labels.
+- Brand tint: a pseudo-element or overlay over the tile pane only (not over markers, popups or controls), background `--background`/violet at low alpha with `mix-blend-mode: color` or `multiply`, so land reads as `#0F0F23`-ish and water/roads pick up a faint violet. `pointer-events: none`.
+- The map container background uses `--background`, so tiles that are still loading don't flash white or grey.
+- Leaflet zoom controls and the attribution box are themed from the tokens (card background, border, text). The attribution stays readable (≥ 4.5:1).
+- Markers keep their neon look and must still stand out clearly against the darker base.
+- If the CSS result is still not convincing, the fallback is CARTO Dark Matter tiles. That is a new third-party host, so it needs a PM decision first (Datenschutz text, CARTO's free-usage limits for commercial sites, attribution `© OpenStreetMap-Mitwirkende © CARTO`).
 
 **Section transitions (owner request, 2026-09-25).** Sections fade in as they scroll into view and fade out as they leave. Built with motion-v only, no new dependency:
 - One wrapper component `components/Reveal.vue`: `<motion.div :initial="{ opacity: 0, y: 24 }" :while-in-view="{ opacity: 1, y: 0 }" :in-view-options="{ once: false, amount: 0.2 }" :transition="{ duration: 0.5, ease: 'easeOut' }">`. `once: false` gives the fade-out when a section leaves the viewport.
@@ -223,7 +237,7 @@ Local dev without the full stack: `docker compose up db -d`, then `dotnet run --
 Owned by the PM. `frontend/src/api.ts` mirrors these types verbatim; `backend/Program.cs` defines them as `record`s. JSON is camelCase, enums are strings, dates are ISO-8601 UTC strings.
 
 ```ts
-export type Category = "Vape" | "Drink" | "Snack";
+export type Category = "Vape" | "Tobacco" | "Accessory" | "Drink" | "Snack";
 
 export interface Machine {
   id: number;
@@ -249,7 +263,7 @@ export interface InventoryItem {
 export interface Inventory {
   machineId: number;
   updatedAt: string | null;   // max(updated_at) over items; null when no items
-  items: InventoryItem[];     // sorted by category (Vape, Drink, Snack), then name
+  items: InventoryItem[];     // sorted by category (Vape, Tobacco, Accessory, Drink, Snack), then name
 }
 
 export interface InventoryWrite {   // PUT body element
@@ -290,7 +304,7 @@ Informal *du*. No exclamation marks except the hero. Name the outcome, not the m
 | logo.alt | `SMOKE` |
 | panel.quantity | `{qty} Stück` (0 → `0 Stück`, shown next to the `ausverkauft` badge) |
 | stock.available / low / soldOut | `verfügbar` (qty > 3) · `wenige` (1–3) · `ausverkauft` (0) |
-| category.Vape / Drink / Snack | `Vapes` · `Drinks` · `Snacks` |
+| category.Vape / Tobacco / Accessory / Drink / Snack | `Vapes` · `Tabak` · `Rauchzubehör` · `Drinks` · `Snacks` |
 | card.route | `Route` |
 | map.loadError | `Die Standorte konnten nicht geladen werden.` |
 | age.title | `Bist du 18 oder älter?` |
@@ -336,6 +350,8 @@ Runs once, by the PM, after both specialists have reported. A specialist's own b
 | **B2** | smokemkk-backend | `backend/**` — `Product.ImageUrl` (nullable), second migration `AddProductImage`, seed catalogue renamed with image paths per §3, `imageUrl` in `InventoryItemDto` per §5 | `dotnet build -warnaserror` clean; `has-pending-model-changes` none; exactly two migrations | B1, §5 |
 | **F1+** | smokemkk-frontend | added to F1: product images with category fallback, quantity per item, panel summary (§4.3, §6); `public/products/` stays empty apart from a `README.txt` naming the expected files | as F1, plus the panel checked with the API absent (§6 states) | §5, §6 |
 | **F2** | smokemkk-frontend | `frontend/**` — self-host Space Grotesk (`public/fonts/*.woff2`, `@font-face`, `font-display: swap`, remove every fonts.googleapis.com / fonts.gstatic.com reference); `skipLink` per §6; `panel.summary` singular forms per §6 | `npm run build` clean; `grep -r googleapis frontend/src frontend/index.html` empty; browser network tab shows no request to a Google host | F1 |
+| **B3** | smokemkk-backend | `backend/**` — `Category` enum gains `Tobacco`, `Accessory` in the §4.2 order; seed per §3 (id 3 renamed, ids 10–13 added, stock rows for all 13 on every active machine, all three stock states still on every machine) | `dotnet build -warnaserror` clean; `has-pending-model-changes` none (enum stored as text → no migration expected; if EF wants one, stop and report) | B2, §5 |
+| **F3** | smokemkk-frontend | `frontend/**` — mirror the §5 `Category` type; §6 labels; two new placeholder SVGs (tobacco, lighter); category order from §5; `public/products/README.txt` lists all 13 files | `npm run build` clean; panel shows five groups in order against the running API | §5, §6 |
 | **T2** | PM | run §7; legal placeholder review; visually compare all 12 pins with the Google links; commit; update this file's status line | §7 all green | B1, F1, Docker Desktop |
 
 B1 and F1 run **in parallel** — disjoint paths, contract already fixed. The migration is created once, in B1, by the backend specialist; nobody else runs `dotnet ef`.
