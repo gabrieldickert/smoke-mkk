@@ -10,7 +10,7 @@ import SocialLinks from '../components/SocialLinks.vue'
 import AuroraBackground from '../components/ui/AuroraBackground.vue'
 import FlipWords from '../components/ui/FlipWords.vue'
 
-const WORDS = ['Vapes', 'Drinks', 'Snacks']
+const WORDS = ['Vapes', 'Tabak', 'Rauchzubehör', 'Drinks', 'Snacks']
 
 const reduceMotion = useReducedMotion()
 const machines = ref<Machine[]>([])
@@ -51,8 +51,10 @@ function jumpToMap() {
 <template>
   <div>
     <!-- Single element root (no comment above it): App.vue wraps RouterView in <Transition mode="out-in">. -->
+    <!-- overflow-x-clip: FlipWords' leave animation scales the word 2x; without the clip a long
+         word would briefly widen the page on phones. clip (not hidden) keeps y visible. -->
     <AuroraBackground
-      class="aurora-brand h-auto min-h-[calc(100svh-4rem)] bg-background px-4 py-16 text-foreground dark:bg-background"
+      class="aurora-brand h-auto min-h-[calc(100svh-4rem)] overflow-x-clip bg-background px-4 py-16 text-foreground dark:bg-background"
     >
       <Reveal class="relative z-10 flex flex-col items-center text-center">
         <img
@@ -62,11 +64,27 @@ function jumpToMap() {
           height="600"
           class="size-36 rounded-3xl shadow-[0_0_64px_var(--glow)] sm:size-48"
         />
-        <h1 class="mt-8 text-5xl font-bold uppercase tracking-tight sm:text-7xl">
+        <!-- Fluid size: RAUCHZUBEHÖR is ~7.6em wide incl. FlipWords' trailing nbsp, plus its px-2
+             (measured: 292 px of a 343 px content box at 375 px). It must fit one line from 320 px
+             up, so the size follows the viewport and caps at text-7xl (4.5rem) from ~700 px.
+             min-h + fixed leading reserve the line while FlipWords swaps words (v-show gap). -->
+        <h1
+          class="mt-8 min-h-[1.1em] text-[length:clamp(1.75rem,calc((100vw_-_3rem)/9),4.5rem)] leading-[1.1] font-bold uppercase tracking-tight"
+        >
           <span class="sr-only">{{ WORDS.join(' · ') }}</span>
-          <span v-if="reduceMotion" aria-hidden="true" class="text-secondary">{{
-            WORDS.join(' · ')
-          }}</span>
+          <!-- Reduced motion: every word stays whole; a line may only break after a separator. -->
+          <span
+            v-if="reduceMotion"
+            aria-hidden="true"
+            class="block text-balance text-secondary [text-shadow:0_0_28px_var(--glow)]"
+          >
+            <template v-for="(word, i) in WORDS" :key="word">
+              <span class="whitespace-nowrap"
+                >{{ word
+                }}<span v-if="i < WORDS.length - 1" class="text-primary">&nbsp;·</span></span
+              >{{ ' ' }}
+            </template>
+          </span>
           <FlipWords
             v-else
             aria-hidden="true"
@@ -75,8 +93,11 @@ function jumpToMap() {
             class="text-secondary [text-shadow:0_0_28px_var(--glow)] dark:text-secondary"
           />
         </h1>
+        <!-- Always rendered, hidden (visually and from AT) until there is a count: the sentence
+             itself reserves its one- or two-line height, so nothing below moves when the API
+             answers — a direct load of /#standorte has already scrolled by then. -->
         <p
-          v-if="machines.length"
+          :class="{ invisible: !machines.length }"
           class="mt-5 max-w-xl text-lg text-foreground/85 text-balance sm:text-xl"
         >
           Hat immer auf. {{ machines.length }}
