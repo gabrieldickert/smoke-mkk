@@ -11,7 +11,7 @@ const links = [
 <template>
   <ul :class="variant === 'cta' ? 'flex flex-wrap justify-center gap-3' : 'flex items-center gap-1'">
     <li v-for="link in links" :key="link.label">
-      <!-- cta: both secondary; the hero's one primary CTA is Automat finden (ui-ux-pro-max primary-action). -->
+      <!-- cta: both secondary; the hero's one primary CTA is Automat in deiner Nähe finden (ui-ux-pro-max primary-action). -->
       <a
         :href="link.href"
         target="_blank"

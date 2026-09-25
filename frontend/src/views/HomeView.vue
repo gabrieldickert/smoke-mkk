@@ -100,12 +100,11 @@ function jumpToMap() {
           :class="{ invisible: !machines.length }"
           class="mt-5 max-w-xl text-lg text-foreground/85 text-balance sm:text-xl"
         >
-          Hat immer auf. {{ machines.length }}
-          {{ machines.length === 1 ? 'Automat' : 'Automaten' }} zwischen Rodgau und Fulda.
+          Immer für dich da! {{ machines.length }}x im <span class="whitespace-nowrap">Main-Kinzig-Kreis</span> und Umgebung
         </p>
         <a
           href="#standorte"
-          class="mt-8 inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-7 py-3 text-lg font-semibold uppercase tracking-wide text-primary-foreground shadow-[0_0_24px_var(--glow)] transition-colors duration-200 hover:bg-primary/85"
+          class="mt-8 inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-5 py-3 text-base font-semibold uppercase tracking-wide text-primary-foreground shadow-[0_0_24px_var(--glow)] transition-colors duration-200 hover:bg-primary/85 sm:px-7 sm:text-lg"
           @click.exact.prevent="jumpToMap"
         >
           <svg
@@ -121,10 +120,10 @@ function jumpToMap() {
             <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
             <circle cx="12" cy="10" r="3" />
           </svg>
-          Automat finden
+          <span class="text-balance">Automat in deiner Nähe finden</span>
         </a>
         <p class="mt-10 text-sm text-muted-foreground text-balance">
-          Neue Standorte gibt's zuerst auf Instagram und TikTok.
+          Folg uns, um nichts zu verpassen!
         </p>
         <div class="mt-3">
           <SocialLinks variant="cta" />
@@ -141,11 +140,11 @@ function jumpToMap() {
     >
       <Reveal>
         <h2 id="standorte-heading" class="text-3xl font-bold uppercase tracking-tight sm:text-4xl">
-          Standorte
+          Unsere Automaten
         </h2>
         <p class="mt-3 max-w-2xl text-muted-foreground text-pretty sm:text-lg">
-          <strong class="font-semibold text-foreground">Erst schauen, dann losgehen.</strong>
-          Jeder Pin zeigt dir, was gerade im Automaten ist.
+          <strong class="font-semibold text-foreground">Hast du Lust auf Snacks, Drinks and more?</strong>
+          Such dir einen Automaten in deiner Nähe aus und schau, ob deine Lieblingssachen verfügbar sind!
         </p>
       </Reveal>
 
