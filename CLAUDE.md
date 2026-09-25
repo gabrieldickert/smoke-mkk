@@ -80,7 +80,7 @@ dotnet build backend -warnaserror
 
 Operator workflow for stock (until phase 2): `PUT /api/machines/{id}/inventory` with header `X-Api-Key` — see `docs/PLAN.md` §5 and `README.md`.
 
-**Docker Desktop was not installed on the dev machine on 2026-09-25.** Without it: build both apps, but no runtime verification. WSL 2 is present.
+**Docker Desktop is installed but cannot start until WSL is installed (`wsl --install` as admin, then reboot).** Until then: build both apps, but no runtime verification.
 
 ## 5. Non-negotiables
 

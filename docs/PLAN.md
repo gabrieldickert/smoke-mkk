@@ -321,7 +321,7 @@ Runs once, by the PM, after both specialists have reported. A specialist's own b
 
 ## 8. Prerequisites on this machine
 
-- **Docker Desktop is not installed** (checked 2026-09-25: not on PATH, no install dir; WSL present). Install with the WSL 2 backend before T2 — **user action**. Everything up to `dotnet build` / `npm run build` works without it.
+- **Docker Desktop 4.92 is installed** (per user, `%LOCALAPPDATA%ProgramsDockerDesktop`), but **WSL is not installed**, so its engine cannot start ("no virtualization"). Fix, as admin: `wsl --install`, then reboot — **user action**. A shell opened before the Docker install lacks it on PATH; open a new one. Everything up to `dotnet build` / `npm run build` works without it.
 - Present: Node 24, npm 11, .NET 10 SDK, git. `dotnet-ef` is a local tool in `backend/dotnet-tools.json`: run `dotnet tool restore` inside `backend/`, then `dotnet ef`.
 - **A Postgres server already listens on 127.0.0.1:5432 on this machine** (not ours). Never publish the compose `db` on host port 5432; use 5433 for local API development.
 - The `agent-skills` plugin loads on the next session start (enabled in `.claude/settings.json`); `ui-ux-pro-max` is already in `.claude/skills/`.
