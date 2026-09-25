@@ -17,3 +17,6 @@ obj/
 
 # python
 __pycache__/
+
+# local Postgres cluster for Docker-less dev
+.localdb/

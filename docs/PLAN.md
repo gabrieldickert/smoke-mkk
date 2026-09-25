@@ -1,6 +1,6 @@
 # Smoke MKK — Phase 1 implementation plan
 
-*Status: T0, B1, B2, F1, F2 done and committed (2026-09-25) · T2 blocked on Docker Desktop · Owner: the PM/orchestrator (`.claude/agents/smokemkk-pm.md`).*
+*Status: T0, B1, B2, F1, F2 done and committed (2026-09-25) · API + site verified end to end without Docker (local Postgres 16 on 5433, see README) · T2 compose run still blocked on WSL · Owner: the PM/orchestrator (`.claude/agents/smokemkk-pm.md`).*
 
 This is the constitution for phase 1. Anyone — human or agent — picking the project up reads `CLAUDE.md` first, then this file, then takes a ticket from §9. The two specialists implement against §5 (contract) and §6 (copy) **as written here**. Changing either is the PM's decision and is written back here before anyone codes against it.
 

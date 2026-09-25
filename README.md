@@ -16,6 +16,30 @@ docker compose up --build -d
 
 Open http://localhost.
 
+## Run without Docker (Windows, local PostgreSQL 16)
+
+Uses the installed `C:\Program Files\PostgreSQL\16` binaries to run a separate project database on port 5433, stored in the git-ignored `.localdb/` folder. The PostgreSQL service on 5432 is not touched.
+
+Start the database (the cluster already exists after the first setup):
+
+```bash
+"/c/Program Files/PostgreSQL/16/bin/pg_ctl.exe" start -D .localdb -o "-p 5433 -c listen_addresses=localhost" -l .localdb/server.log
+```
+
+Start the API (Git Bash, from the repo root):
+
+```bash
+set -a; . ./.env; set +a; export ConnectionStrings__Default="Host=localhost;Port=5433;Database=smoke;Username=smoke;Password=$DB_PASSWORD"; dotnet run --project backend
+```
+
+Start the site, then open http://localhost:5174:
+
+```bash
+npm run dev --prefix frontend -- --port 5174
+```
+
+Stop the database with `pg_ctl.exe stop -D .localdb`. First-time setup of the cluster, if `.localdb/` is missing: `initdb.exe -D .localdb -U smoke -W -A scram-sha-256 -E UTF8 --locale=C`, then start it and run `createdb.exe -h localhost -p 5433 -U smoke smoke`, using the `DB_PASSWORD` from `.env`.
+
 ## Local development
 
 ```powershell
