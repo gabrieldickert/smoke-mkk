@@ -40,8 +40,8 @@ function selectFromCard(id: number) {
   scrollToMap()
 }
 
-// Hero CTA. Not a plain hash jump: router.ts scrollBehavior would send the page back to the top.
-// Focus moves to the section so the next Tab continues in the map, not back in the hero.
+// Hero CTA. A plain hash jump would scroll to the right place (router.ts / scroll-mt-20), but it
+// does not focus the section; this does, so the next Tab continues in the map, not in the hero.
 function jumpToMap() {
   scrollToMap()
   mapSection.value?.focus({ preventScroll: true })

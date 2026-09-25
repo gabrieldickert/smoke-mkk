@@ -137,6 +137,11 @@
 html {
   color-scheme: light dark;
 }
+/* The skip link is a plain anchor: the browser jumps natively (Vue Router does not scroll it),
+   so main's top would sit under the 64 px sticky header without this. */
+#main {
+  scroll-margin-top: 4rem;
+}
 html.dark {
   color-scheme: dark;
 }
@@ -184,6 +189,15 @@ html.light {
   background: var(--map-tint);
   mix-blend-mode: color;
 }
+/* Map focus ring. The container's own outline cannot be seen: outside, the rounded overflow-hidden
+   wrapper in HomeView clips it; inset, Leaflet's z-indexed panes (400+) paint over it. So the
+   wrapper draws the site's standard ring (base :focus-visible above) while the map has focus. */
+.leaflet-container:focus-visible {
+  outline: none;
+}
+:has(> .leaflet-container:focus-visible) {
+  @apply outline-2 outline-offset-2 outline-ring;
+}
 .leaflet-container .leaflet-control-attribution {
   background: color-mix(in srgb, var(--card) 90%, transparent);
   color: var(--muted-foreground);
@@ -195,12 +209,15 @@ html.light {
   border-color: var(--border) !important;
 }
 .leaflet-bar a,
-.leaflet-bar a:hover {
+.leaflet-bar a:hover,
+.leaflet-bar a:focus {
   background: var(--card);
   color: var(--foreground);
   border-color: var(--border);
 }
-.leaflet-bar a:hover {
+/* :focus too: leaflet.css gives it #f4f4f4, which left the light glyph unreadable. */
+.leaflet-bar a:hover,
+.leaflet-bar a:focus {
   background: var(--muted);
 }
 .machine-marker {
