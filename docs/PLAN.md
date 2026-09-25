@@ -45,7 +45,18 @@ Smoke MKK operates 12 self-service vending machines (vapes, drinks, snacks) in H
 | 11 | hellstein | SMOKE Hellstein | Sandwerkstraße 2 | 63636 | Brachttal | 50.32034 | 9.30018 | true | Google pin |
 | 12 | lauterbach | SMOKE Lauterbach | Marktplatz | 36341 | Lauterbach | 50.63632 | 9.39614 | true | OSM already has a "Smoke" POI here |
 
-Google-Maps URLs for the `google_maps_url` column: the original Linktree short links (`https://goo.gl/maps/…`, `https://maps.app.goo.gl/…`) for #5–#12; for #1–#4 use `https://www.google.com/maps/search/?api=1&query=<url-encoded address>`.
+Google-Maps URLs for the `google_maps_url` column. #1–#4 use `https://www.google.com/maps/search/?api=1&query=<url-encoded address>`. #5–#12 use the original Linktree short links:
+
+| # | google_maps_url |
+|---|---|
+| 5 | https://goo.gl/maps/xXyGLJiPCcnzB36h9 |
+| 6 | https://goo.gl/maps/xX4skQTj9qrPxpgu8 |
+| 7 | `null` — its Linktree link (https://maps.app.goo.gl/dHhCqpEpu9PtY9Xf7) points to Langenselbold, which is wrong |
+| 8 | https://goo.gl/maps/r33J2pLgynRgCQ8K8 |
+| 9 | https://maps.app.goo.gl/4w2qC9V7qHrYzuxk9 |
+| 10 | https://goo.gl/maps/AxoLgpYdEnATwhj67 |
+| 11 | https://maps.app.goo.gl/z3jF2pLDndePZfL87 |
+| 12 | https://maps.app.goo.gl/9j1BeUM7qcCZ44b67 |
 
 **Placeholder catalogue** (real catalogue not public — owner replaces via `PUT`; mark in README as `TODO`):
 
@@ -233,7 +244,7 @@ export interface InventoryWrite {   // PUT body element
 |---|---|---|---|
 | `GET /api/machines` | none | `200 Machine[]` — active machines only, sorted by `name`; cached 60 s | — |
 | `GET /api/machines/{id}/inventory` | none | `200 Inventory` | `404` machine missing or inactive |
-| `PUT /api/machines/{id}/inventory` | header `X-Api-Key` | `204` — **replaces** the machine's whole stock list with the body | `400` ProblemDetails: unknown `productId`, duplicate `productId`, `quantity < 0`, `priceCents < 0`; empty body allowed (clears stock) · `401` missing/wrong key · `404` machine missing · `503` `ADMIN_API_KEY` not configured |
+| `PUT /api/machines/{id}/inventory` | header `X-Api-Key` | `204` — **replaces** the machine's whole stock list with the body | `400` ProblemDetails: unknown `productId`, duplicate `productId`, `quantity < 0`, `priceCents < 0`, missing field, malformed JSON, zero-length body; `[]` is allowed and clears the stock · `401` missing/wrong key · `404` machine missing (inactive machines are accepted) · `503` `ADMIN_API_KEY` not configured. Checked in the order 503 → 401 → 404 → 400. |
 | `GET /health` | none | `200` text `ok` | — |
 
 Errors use ASP.NET's default `ProblemDetails` body. The frontend shows §6 copy, never the server message.
@@ -288,7 +299,8 @@ Runs once, by the PM, after both specialists have reported. A specialist's own b
 ## 8. Prerequisites on this machine
 
 - **Docker Desktop is not installed** (checked 2026-09-25: not on PATH, no install dir; WSL present). Install with the WSL 2 backend before T2 — **user action**. Everything up to `dotnet build` / `npm run build` works without it.
-- Present: Node 24, npm 11, .NET 10 SDK, git. Additionally: `dotnet tool install -g dotnet-ef`.
+- Present: Node 24, npm 11, .NET 10 SDK, git. `dotnet-ef` is a local tool in `backend/dotnet-tools.json`: run `dotnet tool restore` inside `backend/`, then `dotnet ef`.
+- **A Postgres server already listens on 127.0.0.1:5432 on this machine** (not ours). Never publish the compose `db` on host port 5432; use 5433 for local API development.
 - The `agent-skills` plugin loads on the next session start (enabled in `.claude/settings.json`); `ui-ux-pro-max` is already in `.claude/skills/`.
 
 ## 9. Tickets and ownership
