@@ -57,13 +57,13 @@ app.MapGet("/api/machines/{id:int}/inventory", async (int id, AppDb db) =>
     var rows = await db.MachineInventory
         .Where(i => i.MachineId == id)
         .OrderBy(i => i.Product.Name)
-        .Select(i => new { i.ProductId, i.Product.Name, i.Product.Category, i.Quantity, i.PriceCents, i.UpdatedAt })
+        .Select(i => new { i.ProductId, i.Product.Name, i.Product.Category, i.Product.ImageUrl, i.Quantity, i.PriceCents, i.UpdatedAt })
         .ToListAsync();
 
     // Category is stored as a string, so enum order (Vape, Drink, Snack) is applied here; OrderBy is stable, keeping name order.
     var items = rows
         .OrderBy(r => r.Category)
-        .Select(r => new InventoryItemDto(r.ProductId, r.Name, r.Category, r.Quantity, r.PriceCents))
+        .Select(r => new InventoryItemDto(r.ProductId, r.Name, r.Category, r.ImageUrl, r.Quantity, r.PriceCents))
         .ToList();
     DateTime? updatedAt = rows.Count == 0 ? null : rows.Max(r => r.UpdatedAt);
     return Results.Ok(new InventoryDto(id, updatedAt, items));
@@ -142,6 +142,6 @@ app.Run();
 
 // docs/PLAN.md §5 — wire names are camelCase (System.Text.Json web defaults), enums as strings.
 record MachineDto(int Id, string Slug, string Name, string Street, string PostalCode, string City, double Lat, double Lng, string? GoogleMapsUrl);
-record InventoryItemDto(int ProductId, string Name, Category Category, int Quantity, int PriceCents);
+record InventoryItemDto(int ProductId, string Name, Category Category, string? ImageUrl, int Quantity, int PriceCents);
 record InventoryDto(int MachineId, DateTime? UpdatedAt, List<InventoryItemDto> Items);
 record InventoryWrite(int ProductId, int Quantity, int PriceCents);

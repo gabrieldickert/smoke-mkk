@@ -58,19 +58,21 @@ Google-Maps URLs for the `google_maps_url` column. #1–#4 use `https://www.goog
 | 11 | https://maps.app.goo.gl/z3jF2pLDndePZfL87 |
 | 12 | https://maps.app.goo.gl/9j1BeUM7qcCZ44b67 |
 
-**Placeholder catalogue** (real catalogue not public — owner replaces via `PUT`; mark in README as `TODO`):
+**Placeholder catalogue** (real catalogue not public — owner confirms or replaces it; mark in README as `TODO`). Named like real vending products so the product images make sense (owner request, 2026-09-25):
 
-| id | name | category |
-|---|---|---|
-| 1 | Einweg-Vape Blueberry Ice (600 Züge) | Vape |
-| 2 | Einweg-Vape Watermelon (600 Züge) | Vape |
-| 3 | Nikotin-Pouches Mint | Vape |
-| 4 | Energy Drink 250 ml | Drink |
-| 5 | Cola 330 ml | Drink |
-| 6 | Wasser still 500 ml | Drink |
-| 7 | Schokoriegel | Snack |
-| 8 | Fruchtgummi 100 g | Snack |
-| 9 | Chips Paprika 50 g | Snack |
+| id | name | category | image_url |
+|---|---|---|---|
+| 1 | Elf Bar 600 Blueberry Ice | Vape | `/products/elfbar-600-blueberry-ice.webp` |
+| 2 | Elf Bar 600 Watermelon | Vape | `/products/elfbar-600-watermelon.webp` |
+| 3 | VELO Freeze Mint | Vape | `/products/velo-freeze-mint.webp` |
+| 4 | Red Bull Energy Drink 250 ml | Drink | `/products/red-bull-250.webp` |
+| 5 | Coca-Cola Zero 330 ml | Drink | `/products/coca-cola-zero-330.webp` |
+| 6 | Vio Wasser still 500 ml | Drink | `/products/vio-still-500.webp` |
+| 7 | Snickers | Snack | `/products/snickers.webp` |
+| 8 | Haribo Goldbären 100 g | Snack | `/products/haribo-goldbaeren-100.webp` |
+| 9 | Pringles Paprika 40 g | Snack | `/products/pringles-paprika-40.webp` |
+
+**Product images.** `image_url` is a site-relative path; the file lives in `frontend/public/products/`. Brand packshots are copyrighted, so **nobody downloads them from the web**. The owner supplies real photos (own photos of the machine stock, or packshots from their wholesaler with usage rights), saved under exactly these file names as square WebP, about 400×400. Until a file exists, the frontend shows a category placeholder (§4.3), so the site never shows a broken image.
 
 Seed stock: every active machine gets all 9 products; quantities vary so that all three display states (§6) appear on every machine (e.g. `7, 5, 0, 12, 2, 8, 6, 0, 3`), `price_cents` plausible (vapes 899–1299, drinks 250–350, snacks 150–250), `updated_at` = seed time.
 
@@ -120,7 +122,7 @@ C:\smokemkk\
 Entities (EF defaults, no naming plugin):
 
 - `Machine(Id, Slug, Name, Street, PostalCode, City, Lat, Lng, IsActive, GoogleMapsUrl)` — `Slug` unique
-- `Product(Id, Name, Category)` — `Category` is a C# enum `Vape | Drink | Snack` stored as string (`HasConversion<string>()`), so a later age filter is a WHERE clause
+- `Product(Id, Name, Category, ImageUrl)` — `ImageUrl` is a nullable site-relative path (§3); `Category` is a C# enum `Vape | Drink | Snack` stored as string (`HasConversion<string>()`), so a later age filter is a WHERE clause
 - `MachineInventory(MachineId, ProductId, Quantity, PriceCents, UpdatedAt)` — composite PK; `Quantity >= 0` and `PriceCents >= 0` as check constraints
 
 Rules:
@@ -153,12 +155,21 @@ and apply the `#instructions` block of the matching doc `content/en/2.components
 
 Own components:
 - `MachineMap.vue` — raw Leaflet in `onMounted` on a `ref` div, destroyed in `onUnmounted`. Tiles `https://tile.openstreetmap.org/{z}/{x}/{y}.png` with attribution `&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende` (mandatory; swap to CARTO Voyager is a one-line URL change if traffic grows). Markers via `L.divIcon` with a Tailwind-styled class (avoids Leaflet's broken default-icon paths under Vite). `fitBounds` over all machines with padding. Props `machines`, `selectedId`; emits `select(id)`. Selected marker gets a distinct class.
-- `InventoryPanel.vue` — prop `machine | null`; loads inventory on change; groups by category; stock state per §6 thresholds (one const); price `(priceCents/100).toLocaleString("de-DE", {style:"currency", currency:"EUR"})`; "Stand" from `updatedAt` via `toLocaleString("de-DE")`. Items fade in with `<motion.li>` from motion-v (`initial/animate`), guarded by `useReducedMotion` from motion-v — no animation when the OS asks for reduced motion.
+- `InventoryPanel.vue` — prop `machine | null`; loads inventory on change; groups by category. Each item is a row or tile with the **product image** (`<img :src="imageUrl" :alt="name" loading="lazy" width height>` in a fixed square box, `object-contain`), name, price, the **quantity as a number** (`panel.quantity`) and the stock state badge per §6 thresholds (one const). The panel header shows `panel.summary` for the selected machine. Image fallback: when `imageUrl` is null or the `<img>` fires `error`, show a category placeholder instead — one inline SVG per category (can, vape, snack bag) in the brand colours, no image library. Sold-out items stay listed, their image desaturated (`grayscale opacity-60`); price `(priceCents/100).toLocaleString("de-DE", {style:"currency", currency:"EUR"})`; "Stand" from `updatedAt` via `toLocaleString("de-DE")`. Items fade in with `<motion.li>` from motion-v (`initial/animate`), guarded by `useReducedMotion` from motion-v — no animation when the OS asks for reduced motion.
 - `MachineCard.vue` — wraps `CardSpotlight`; name, address, "Route" link (`google_maps_url`, `target="_blank" rel="noopener"`), click selects on the map and scrolls the map into view.
 - `AgeGate.vue` — native `<dialog>`; `showModal()` in `onMounted` unless `localStorage.getItem("ageConfirmed") === "1"` (wrap storage access in try/catch). "Ja" → set flag, `close()`. "Nein" → swap content to the denial text, keep open. `Escape` disabled (`@cancel.prevent`). Tailwind only.
 - `HomeView.vue` — `AuroraBackground` hero (logo, `FlipWords`, tagline, Instagram/TikTok CTAs) → section "Standorte": map left / `InventoryPanel` right (stacked below `md`) → `MachineCard` grid (the accessibility/SEO text fallback for the map). Empty/error states per §6.
 - `LegalView.vue` — one component, `route.name` decides Impressum vs. Datenschutz; placeholder texts marked `TODO`; Datenschutz must mention OSM tile requests (IP to openstreetmap.org), the `localStorage` age flag, and the Instagram/TikTok links.
 - SEO basics only: `lang="de"`, `<title>`, `meta description`, OG tags, `robots.txt` (allow all). No pre-rendering.
+
+**Section transitions (owner request, 2026-09-25).** Sections fade in as they scroll into view and fade out as they leave. Built with motion-v only, no new dependency:
+- One wrapper component `components/Reveal.vue`: `<motion.div :initial="{ opacity: 0, y: 24 }" :while-in-view="{ opacity: 1, y: 0 }" :in-view-options="{ once: false, amount: 0.2 }" :transition="{ duration: 0.5, ease: 'easeOut' }">`. `once: false` gives the fade-out when a section leaves the viewport.
+- Wrap each home section with it: hero content, the "Standorte" heading, the map + panel block, and the card grid.
+- Cards stagger: each `MachineCard` in the grid is its own `Reveal` with `delay = index * 0.05` (cap at 0.4 s).
+- Inventory panel: switching machines cross-fades the list (`AnimatePresence` from motion-v, `mode="wait"`, keyed by machine id), in addition to the per-item fade-in.
+- Route change `/` ↔ `/impressum` ↔ `/datenschutz`: Vue's built-in `<Transition name="fade" mode="out-in">` around `<RouterView>` in `App.vue`, CSS opacity 200 ms.
+- The map itself never fades out while in use: the map block uses `once: true` so Leaflet is not hidden mid-interaction.
+- **Reduced motion:** `useReducedMotion()` true → `Reveal` renders a plain `<div>` with no animation, and the route fade is disabled via `@media (prefers-reduced-motion: reduce)`. Content must be fully visible with JavaScript animations off.
 
 ### 4.4 Docker
 
@@ -223,6 +234,7 @@ export interface InventoryItem {
   productId: number;
   name: string;
   category: Category;
+  imageUrl: string | null;   // site-relative, e.g. "/products/red-bull-250.webp"; file may not exist yet
   quantity: number;      // >= 0
   priceCents: number;    // >= 0
 }
@@ -266,6 +278,8 @@ Informal *du*. No exclamation marks except the hero. Name the outcome, not the m
 | panel.noStock | `Für diesen Automaten ist noch kein Bestand hinterlegt.` |
 | panel.error | `Der Bestand konnte gerade nicht geladen werden. Versuch es gleich noch einmal.` |
 | panel.updatedAt | `Stand: {datetime}` |
+| panel.summary | `{n} Produkte · {m} Artikel im Automaten` (n = items with quantity > 0, m = sum of quantities) |
+| panel.quantity | `{qty} Stück` (0 → `0 Stück`, shown next to the `ausverkauft` badge) |
 | stock.available / low / soldOut | `verfügbar` (qty > 3) · `wenige` (1–3) · `ausverkauft` (0) |
 | category.Vape / Drink / Snack | `Vapes` · `Drinks` · `Snacks` |
 | card.route | `Route` |
@@ -310,6 +324,8 @@ Runs once, by the PM, after both specialists have reported. A specialist's own b
 | **T0** | PM | root: `git init`, `.gitignore`, `.env.example` (`DB_PASSWORD`, `ADMIN_API_KEY`), `README.md`, `docker-compose.yml` | files exist, first commit made | — |
 | **B1** | smokemkk-backend | `backend/**` — scaffold, `Db.cs`, `Seed.cs` (§3), endpoints (§5), `launchSettings.json` port 5000, `Migrations/Init`, `Dockerfile`, `.dockerignore` | `dotnet build -warnaserror` clean; report lists every route with its status codes | §5 |
 | **F1** | smokemkk-frontend | `frontend/**` — `ui-ux-pro-max` first (palette + fonts), scaffold, Tailwind, Inspira prerequisites + tokens, 4 copied components, 5 own components, 2 views, router, `api.ts`, `index.html` meta, `public/`, `nginx.conf`, `Dockerfile`, `.dockerignore` | `npm run build` clean (incl. `vue-tsc`); browser check at 1280×800 and 375×812 with the dev server (API may be absent → §6 empty/error states must render) | §5, §6 |
+| **B2** | smokemkk-backend | `backend/**` — `Product.ImageUrl` (nullable), second migration `AddProductImage`, seed catalogue renamed with image paths per §3, `imageUrl` in `InventoryItemDto` per §5 | `dotnet build -warnaserror` clean; `has-pending-model-changes` none; exactly two migrations | B1, §5 |
+| **F1+** | smokemkk-frontend | added to F1: product images with category fallback, quantity per item, panel summary (§4.3, §6); `public/products/` stays empty apart from a `README.txt` naming the expected files | as F1, plus the panel checked with the API absent (§6 states) | §5, §6 |
 | **T2** | PM | run §7; legal placeholder review; visually compare all 12 pins with the Google links; commit; update this file's status line | §7 all green | B1, F1, Docker Desktop |
 
 B1 and F1 run **in parallel** — disjoint paths, contract already fixed. The migration is created once, in B1, by the backend specialist; nobody else runs `dotnet ef`.
@@ -320,7 +336,8 @@ B1 and F1 run **in parallel** — disjoint paths, contract already fixed. The mi
 - shadcn-vue → when forms/menus/tables appear (phase 2 admin, phase 3 shop).
 - Iconify → when more than a handful of icons are needed (Instagram/TikTok are inline SVGs).
 - Light theme toggle → never asked for; tokens already carry the values.
-- `Product.ImageUrl`, `Product.PriceCents`/VAT → phase 3 (trivial migration).
+- `Product.PriceCents`/VAT → phase 3 (trivial migration). (`Product.ImageUrl` was pulled into phase 1 on 2026-09-25.)
+- Image upload/admin → phase 2; phase 1 images are files the owner drops into `frontend/public/products/`.
 - Pinia / shared state → when a second view needs the machine list.
 - Marker clustering → when > ~50 machines.
 - Admin UI → phase 2; PUT + curl covers phase 1.

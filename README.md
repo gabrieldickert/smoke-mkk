@@ -48,8 +48,15 @@ curl -X PUT http://localhost/api/machines/1/inventory \
 
 `204` on success, `400` for unknown or duplicate products, negative values or a malformed body, `401` for a missing or wrong key, `503` when `ADMIN_API_KEY` is not set on the server. Send `[]` to clear a machine's stock.
 
+## Product images
+
+Each product has a fixed image path, listed in `docs/PLAN.md` §3 (for example `/products/red-bull-250.webp`). Save the photo as a square WebP, about 400×400, under that exact name in `frontend/public/products/`. Rebuild the web image (`docker compose up --build -d web`). Until a file exists, the site shows a category placeholder.
+
+Use your own photos or packshots you have the rights to. Do not copy brand images from the web.
+
 ## Open items for the owner
 
 - TODO: real product catalogue (the seed is a placeholder).
+- TODO: product photos for the 9 seeded products (see "Product images").
 - TODO: machine "Burgjoss" has no known address; it is hidden until confirmed.
 - TODO: Impressum and Datenschutz texts.

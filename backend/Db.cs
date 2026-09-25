@@ -24,6 +24,7 @@ public class Product
     public int Id { get; set; }
     public required string Name { get; set; }
     public Category Category { get; set; }
+    public string? ImageUrl { get; set; }   // site-relative, e.g. "/products/red-bull-250.webp" (docs/PLAN.md §3)
 }
 
 public class MachineInventory

@@ -27,18 +27,18 @@ public static class Seed
             M(12, "lauterbach", "SMOKE Lauterbach", "Marktplatz", "36341", "Lauterbach", 50.63632, 9.39614, "https://maps.app.goo.gl/9j1BeUM7qcCZ44b67"),
         ];
 
-        // Placeholder catalogue (TODO(owner): real catalogue via PUT). Price is per machine in MachineInventory.
+        // Placeholder catalogue (TODO(owner): confirm or replace). Image files are supplied by the owner in frontend/public/products/. Price is per machine in MachineInventory.
         (Product Product, int PriceCents)[] catalogue =
         [
-            (new() { Id = 1, Name = "Einweg-Vape Blueberry Ice (600 Züge)", Category = Category.Vape }, 1299),
-            (new() { Id = 2, Name = "Einweg-Vape Watermelon (600 Züge)", Category = Category.Vape }, 1199),
-            (new() { Id = 3, Name = "Nikotin-Pouches Mint", Category = Category.Vape }, 899),
-            (new() { Id = 4, Name = "Energy Drink 250 ml", Category = Category.Drink }, 299),
-            (new() { Id = 5, Name = "Cola 330 ml", Category = Category.Drink }, 350),
-            (new() { Id = 6, Name = "Wasser still 500 ml", Category = Category.Drink }, 250),
-            (new() { Id = 7, Name = "Schokoriegel", Category = Category.Snack }, 150),
-            (new() { Id = 8, Name = "Fruchtgummi 100 g", Category = Category.Snack }, 199),
-            (new() { Id = 9, Name = "Chips Paprika 50 g", Category = Category.Snack }, 250),
+            (new() { Id = 1, Name = "Elf Bar 600 Blueberry Ice", Category = Category.Vape, ImageUrl = "/products/elfbar-600-blueberry-ice.webp" }, 1299),
+            (new() { Id = 2, Name = "Elf Bar 600 Watermelon", Category = Category.Vape, ImageUrl = "/products/elfbar-600-watermelon.webp" }, 1199),
+            (new() { Id = 3, Name = "VELO Freeze Mint", Category = Category.Vape, ImageUrl = "/products/velo-freeze-mint.webp" }, 899),
+            (new() { Id = 4, Name = "Red Bull Energy Drink 250 ml", Category = Category.Drink, ImageUrl = "/products/red-bull-250.webp" }, 299),
+            (new() { Id = 5, Name = "Coca-Cola Zero 330 ml", Category = Category.Drink, ImageUrl = "/products/coca-cola-zero-330.webp" }, 350),
+            (new() { Id = 6, Name = "Vio Wasser still 500 ml", Category = Category.Drink, ImageUrl = "/products/vio-still-500.webp" }, 250),
+            (new() { Id = 7, Name = "Snickers", Category = Category.Snack, ImageUrl = "/products/snickers.webp" }, 150),
+            (new() { Id = 8, Name = "Haribo Goldbären 100 g", Category = Category.Snack, ImageUrl = "/products/haribo-goldbaeren-100.webp" }, 199),
+            (new() { Id = 9, Name = "Pringles Paprika 40 g", Category = Category.Snack, ImageUrl = "/products/pringles-paprika-40.webp" }, 250),
         ];
 
         // Rotated per machine: every machine shows all three stock states (>3, 1–3, 0).
