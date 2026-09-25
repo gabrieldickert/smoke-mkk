@@ -100,7 +100,7 @@ function jumpToMap() {
           :class="{ invisible: !machines.length }"
           class="mt-5 max-w-xl text-lg text-foreground/85 text-balance sm:text-xl"
         >
-          Immer für dich da! {{ machines.length }}x im <span class="whitespace-nowrap">Main-Kinzig-Kreis</span> und Umgebung
+          {{ machines.length }}x im <span class="whitespace-nowrap">Main-Kinzig-Kreis</span> <span class="whitespace-nowrap">und Umgebung</span>
         </p>
         <a
           href="#standorte"

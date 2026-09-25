@@ -308,7 +308,7 @@ Informal *du*. No exclamation marks except the hero and rows marked *owner's wor
 | html title / og:title | `Smoke MKK - Vapes, Drinks, Snacks & More!` (owner's wording, 2026-09-25; knowingly English and with an exclamation mark) |
 | meta description / og:description | `Vapes, Drinks und Snacks aus dem Automaten, rund um die Uhr. Alle Standorte zwischen Rodgau und Fulda, mit Bestand auf der Karte.` |
 | hero.words | `Vapes` · `Tabak` · `Rauchzubehör` · `Drinks` · `Snacks` (FlipWords; all five categories in §5 order, same labels as `category.*`; the longest word must fit at 375 px without breaking or overflowing) |
-| hero.tagline | `Immer für dich da! {n}x im Main-Kinzig-Kreis und Umgebung` (owner's wording; n = active machines, computed, never hard-coded; `1x` needs no singular form) |
+| hero.tagline | `{n}x im Main-Kinzig-Kreis und Umgebung` (owner's wording; n = active machines, computed, never hard-coded; `1x` needs no singular form) |
 | hero.cta.map | `Automat in deiner Nähe finden` (owner's wording; primary button, first hero CTA, jumps to `#standorte`) |
 | hero.social.lead | `Folg uns, um nichts zu verpassen!` (owner's wording; small line directly above the Instagram/TikTok CTAs) |
 | hero.cta.instagram / tiktok | `Instagram` · `TikTok` |
