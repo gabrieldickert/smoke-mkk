@@ -1,0 +1,16 @@
+# secrets
+.env
+
+# frontend
+node_modules/
+dist/
+*.tsbuildinfo
+
+# backend
+bin/
+obj/
+.vs/
+*.user
+
+# local tooling
+.claude/settings.local.json

@@ -1,0 +1,14 @@
+{
+  "extraKnownMarketplaces": {
+    "agricidaniel-claude-seo": {
+      "source": { "source": "github", "repo": "AgriciDaniel/claude-seo" }
+    },
+    "addy-agent-skills": {
+      "source": { "source": "github", "repo": "addyosmani/agent-skills" }
+    }
+  },
+  "enabledPlugins": {
+    "claude-seo@agricidaniel-claude-seo": true,
+    "agent-skills@addy-agent-skills": true
+  }
+}
