@@ -18,4 +18,6 @@ pueblo-classic-30.webp
 ocb-slim-premium.webp
 clipper-feuerzeug.webp
 
-Until a file exists, the site shows a category placeholder instead.
+Until real photos arrive, these files are brand-free placeholder illustrations drawn by
+frontend/scripts/product-art/make_products.py (see its README). Replace any file with a
+real photo under the same name; no code change. A missing file shows the category icon.
