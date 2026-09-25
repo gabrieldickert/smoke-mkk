@@ -58,6 +58,7 @@ Do not run two PM sessions against the same working tree; they share no context 
 ```
 backend/     ASP.NET Core minimal API — Program.cs, Db.cs, Seed.cs, Migrations/, Dockerfile
 frontend/    Vue 3 + Vite + TS — src/{main.ts,router.ts,api.ts,App.vue,components/,views/,assets/}, nginx.conf, Dockerfile
+scripts/     dev.ps1 (start/stop without Docker)
 docs/        PLAN.md (constitution) — later ADRs as docs/ADR-00N-topic.md
 docker-compose.yml   db (postgres:17-alpine) · api (:8080 internal) · web (nginx, :80 published)
 .env.example         DB_PASSWORD, ADMIN_API_KEY — copy to .env, never commit .env
@@ -70,6 +71,7 @@ docker-compose.yml   db (postgres:17-alpine) · api (:8080 internal) · web (ngi
 ## 4. Commands
 
 ```powershell
+.\scripts\dev.ps1                      # whole stack without Docker (local Postgres :5433); -Stop to stop
 docker compose up --build -d          # the whole stack → http://localhost
 docker compose up db -d               # Postgres only, for local dev
 dotnet run --project backend          # API on http://localhost:5000 (needs Postgres)
