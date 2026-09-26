@@ -6,11 +6,14 @@ import AgeGate from './components/AgeGate.vue'
 import ScrollSmoke from './components/ScrollSmoke.vue'
 import SmokeIntro from './components/SmokeIntro.vue'
 import SocialLinks from './components/SocialLinks.vue'
-import { smokeTileUrls } from './smoke'
+import { smokeRimStyle, smokeTileUrls } from './smoke'
 
 const route = useRoute()
 const year = new Date().getFullYear() // §6 footer.claim
 const reduceMotion = useReducedMotion()
+// Footer divider rim: its own random speed/offset/phase, so it never moves in sync with the two
+// HomeView dividers (docs/PLAN.md §4.3 "Footer divider").
+const footerRim = smokeRimStyle()
 
 // Smoke (docs/PLAN.md §4.3): the intro once per full page load and the scroll smoke — neither under
 // reduced motion (checked synchronously, so they are never even mounted). The intro holds until
@@ -78,9 +81,15 @@ function toLocations(e: MouseEvent) {
       </RouterView>
     </main>
 
-    <footer class="border-t border-border/60">
+    <!-- Footer divider (docs/PLAN.md §4.3): the glowing divider with its smoke rim, same markup as
+         HomeView's two (styles in main.css). The rim reaches ~30 px either side of the line and is
+         pointer-events: none; pt-10 keeps the footer text below the lower strip. -->
+    <footer>
+      <div aria-hidden="true" class="glow-divider relative z-[1] h-0.5">
+        <span class="divider-smoke" :style="footerRim"><span><span /></span><span><span /></span></span>
+      </div>
       <div
-        class="mx-auto flex max-w-6xl flex-col items-center gap-1 px-4 py-6 text-sm sm:flex-row sm:justify-between"
+        class="mx-auto flex max-w-6xl flex-col items-center gap-1 px-4 pt-10 pb-6 text-sm sm:flex-row sm:justify-between"
       >
         <p class="text-center text-muted-foreground text-balance">
           &copy; {{ year }} Smoke MKK -
