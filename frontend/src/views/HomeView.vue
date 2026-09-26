@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { motion, useReducedMotion } from 'motion-v'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { fetchMachines, type Machine } from '../api'
+import { fetchLocations, type Location } from '../api'
 import InventoryPanel from '../components/InventoryPanel.vue'
 import MachineMap from '../components/MachineMap.vue'
 import Reveal from '../components/Reveal.vue'
@@ -15,13 +15,17 @@ const WORDS = ['Vapes', 'Tabak', 'Rauchzubehör', 'Drinks', 'Snacks']
 const reduceMotion = useReducedMotion()
 // Divider smoke rims: random speed/offset/phase per divider, once per mount (docs/PLAN.md §4.3).
 const rims = [smokeRimStyle(), smokeRimStyle()]
-const machines = ref<Machine[]>([])
+// One map marker per location; a location holds one or more machines (docs/PLAN.md §5, B5).
+const locations = ref<Location[]>([])
 const status = ref<'loading' | 'ready' | 'error'>('loading')
-const selectedId = ref<number | null>(null)
-const selected = computed(() => machines.value.find((m) => m.id === selectedId.value) ?? null)
+const selectedId = ref<number | null>(null) // location id
+const selected = computed(() => locations.value.find((l) => l.id === selectedId.value) ?? null)
+// §6 hero.tagline: n = active machines across all locations, not the number of markers.
+const machineCount = computed(() => locations.value.reduce((n, l) => n + l.machines.length, 0))
 
 // Visitor position (docs/PLAN.md §4.3 "Nearest machine marking"): memory only, never stored or sent.
-type Point = Pick<Machine, 'lat' | 'lng'>
+// Distances and "nearest" are per location.
+type Point = Pick<Location, 'lat' | 'lng'>
 const position = ref<Point | null>(null)
 // Straight-line km, flat-earth (longitude scaled by cos(lat)); plenty within one district.
 const KM_PER_DEGREE = 111.195
@@ -29,7 +33,7 @@ const km = (a: Point, b: Point) =>
   Math.hypot(a.lat - b.lat, (a.lng - b.lng) * Math.cos((a.lat * Math.PI) / 180)) * KM_PER_DEGREE
 const distances = computed(() => {
   const here = position.value
-  return here ? new Map(machines.value.map((m) => [m.id, km(here, m)])) : null
+  return here ? new Map(locations.value.map((l) => [l.id, km(here, l)])) : null
 })
 const nearestId = computed(() => {
   let best: number | null = null
@@ -60,7 +64,7 @@ onMounted(async () => {
     .then((p) => p.state === 'granted' && locate(false))
     .catch(() => {})
   try {
-    machines.value = await fetchMachines()
+    locations.value = await fetchLocations()
     status.value = 'ready'
   } catch {
     status.value = 'error'
@@ -114,7 +118,7 @@ function caretToMap() {
 }
 
 // Only the hero CTA asks for the location (the prompt comes from this click), then selects the
-// nearest machine. The caret never prompts.
+// nearest location. The caret never prompts.
 function jumpToMap() {
   focusMap()
   if (status.value !== 'error') locate(true)
@@ -193,11 +197,11 @@ function jumpToMap() {
                  (ui-ux-pro-max type hierarchy: h1 36/60 px > count 30/48 px > region 24/36 px). The
                  count keeps its lower-case "x" (owner's wording). -->
             <p
-              :class="{ invisible: !machines.length }"
+              :class="{ invisible: !machineCount }"
               class="mt-2 max-w-4xl text-2xl leading-tight font-bold uppercase tracking-tight text-balance text-foreground sm:text-4xl"
             >
               <span class="text-3xl normal-case text-secondary [text-shadow:0_0_28px_var(--glow)] sm:text-5xl"
-                >{{ machines.length }}x</span
+                >{{ machineCount }}x</span
               >
               <!-- One line on purpose: Vue drops whitespace-only text containing a newline, which
                    would remove the only break between the two units. -->
@@ -332,23 +336,27 @@ function jumpToMap() {
         </p>
       </Reveal>
 
+      <!-- F18: from md up map and panel share one height, the viewport minus the 4rem sticky header
+           and 1rem air above and below (svh: stable while mobile browser chrome moves, per
+           ui-ux-pro-max "Viewport Units"), so the block fits on screen once scrolled to; 30rem
+           floor for short windows, 52rem cap for tall ones. Below md the panel grows with the page. -->
       <Reveal class="mt-8 grid gap-6 md:grid-cols-5">
         <div
-          class="relative isolate h-80 overflow-hidden rounded-xl border border-border sm:h-96 md:col-span-3 md:h-[30rem]"
+          class="relative isolate h-80 overflow-hidden rounded-xl border border-border sm:h-96 md:col-span-3 md:h-[clamp(30rem,calc(100svh-6rem),52rem)]"
         >
           <MachineMap
-            :machines="machines"
+            :locations="locations"
             :selected-id="selectedId"
             :position="position"
             :nearest-id="nearestId"
             @select="select"
           />
         </div>
-        <div ref="panelWrap" class="scroll-mt-20 md:col-span-2 md:h-[30rem]">
+        <div ref="panelWrap" class="scroll-mt-20 md:col-span-2 md:h-[clamp(30rem,calc(100svh-6rem),52rem)]">
           <InventoryPanel
-            :machines="machines"
+            :locations="locations"
             :status="status"
-            :machine="selected"
+            :location="selected"
             :distances="distances"
             :nearest-id="nearestId"
             @select="select"

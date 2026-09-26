@@ -2,16 +2,22 @@
 
 export type Category = "Vape" | "Tobacco" | "Accessory" | "Drink" | "Snack";
 
-export interface Machine {
+export interface Location {   // one map marker (B5)
   id: number;
   slug: string;
   name: string;
-  street: string;        // "" when unknown (#7)
+  street: string;
   postalCode: string;
   city: string;
   lat: number;
   lng: number;
   googleMapsUrl: string | null;
+  machines: Machine[];   // active machines only, never empty; sorted by label, then id
+}
+
+export interface Machine {    // one vending machine; the id the inventory routes take
+  id: number;
+  label: string;         // "" when it is the only machine at its location, else e.g. "Grün", "Driving Range"
 }
 
 export interface InventoryItem {
@@ -41,12 +47,12 @@ async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export const fetchMachines = (signal?: AbortSignal) =>
-  getJson<Machine[]>("/api/machines", signal);
+export const fetchLocations = (signal?: AbortSignal) =>
+  getJson<Location[]>("/api/locations", signal);
 
 export const fetchInventory = (machineId: number, signal?: AbortSignal) =>
   getJson<Inventory>(`/api/machines/${machineId}/inventory`, signal);
 
-// docs/PLAN.md §6 "machine display name": the name without its leading "SMOKE " (the header
-// carries the brand), wherever a machine is named in the UI.
-export const placeName = (m: Pick<Machine, "name">) => m.name.replace(/^SMOKE\s+/i, "");
+// docs/PLAN.md §6 "location display name": the name without its leading "SMOKE " (the header
+// carries the brand), wherever a location is named in the UI.
+export const placeName = (l: Pick<Location, "name">) => l.name.replace(/^SMOKE\s+/i, "");

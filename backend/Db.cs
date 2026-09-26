@@ -6,7 +6,8 @@ namespace SmokeMkk.Api;
 // Declaration order is the display and sort order of inventory items (docs/PLAN.md §3, §5).
 public enum Category { Vape, Tobacco, Accessory, Drink, Snack }
 
-public class Machine
+// One site = one map marker (docs/PLAN.md §3, §4.2). A site can hold several machines.
+public class Location
 {
     public int Id { get; set; }
     public required string Slug { get; set; }
@@ -16,8 +17,17 @@ public class Machine
     public required string City { get; set; }
     public double Lat { get; set; }
     public double Lng { get; set; }
-    public bool IsActive { get; set; }
     public string? GoogleMapsUrl { get; set; }
+    public List<Machine> Machines { get; set; } = [];
+}
+
+// One vending machine with its own stock; Id is the Vendon device number.
+public class Machine
+{
+    public int Id { get; set; }
+    public int LocationId { get; set; }
+    public string Label { get; set; } = "";   // "" when it is the only machine at its location
+    public bool IsActive { get; set; }
 }
 
 public class Product
@@ -40,13 +50,14 @@ public class MachineInventory
 
 public class AppDb(DbContextOptions<AppDb> options) : DbContext(options)
 {
+    public DbSet<Location> Locations => Set<Location>();
     public DbSet<Machine> Machines => Set<Machine>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<MachineInventory> MachineInventory => Set<MachineInventory>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
-        b.Entity<Machine>().HasIndex(m => m.Slug).IsUnique();
+        b.Entity<Location>().HasIndex(l => l.Slug).IsUnique();
 
         b.Entity<Product>().Property(p => p.Category).HasConversion<string>();
 

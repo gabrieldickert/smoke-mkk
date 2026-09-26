@@ -1,12 +1,12 @@
 # Smoke MKK — Phase 1 implementation plan
 
-*Status: T0, B1–B3, F1–F13 done and committed (F10 = UX audit + owner additions, aurora-everywhere still a trial; F11–F13 = smoke intro, scroll/divider smoke, bigger hero headline, 2026-09-26) · API + site verified end to end without Docker (local Postgres 16 on 5433, see README) · T2 compose run still blocked on WSL · Owner: the PM/orchestrator (`.claude/agents/smokemkk-pm.md`).*
+*Status: T0, B1–B3, F1–F13 done and committed (F10 = UX audit + owner additions, aurora-everywhere still a trial; F11–F13 = smoke intro, scroll/divider smoke, bigger hero headline, 2026-09-26; B4 = 24 sites from the Vendon export, 2026-09-26, seed checked on a fresh DB; B5 + F15 = one pin per location with a machine picker, 24 locations / 39 machines, 2026-09-26; F16–F17 = stock list gap to scrollbar and flush sticky headings, F19 = taller map + panel on desktop, 2026-09-26) · API + site verified end to end without Docker (local Postgres 16 on 5433, see README) · T2 compose run still blocked on WSL · Owner: the PM/orchestrator (`.claude/agents/smokemkk-pm.md`).*
 
 This is the constitution for phase 1. Anyone — human or agent — picking the project up reads `CLAUDE.md` first, then this file, then takes a ticket from §9. The two specialists implement against §5 (contract) and §6 (copy) **as written here**. Changing either is the PM's decision and is written back here before anyone codes against it.
 
 ## 1. Context
 
-Smoke MKK operates 12 self-service vending machines (vapes, drinks, snacks) in Hessen, Germany. Their only web presence is a Linktree (https://linktr.ee/smoke.mkk) with one Google-Maps link per machine plus Instagram/TikTok. Goal: an own website that replaces the Linktree — a Vue SPA with an OpenStreetMap store finder where every machine is a marker and clicking it shows that machine's current inventory. A B2C/B2B shop follows later (§11). Everything runs in Docker: Vue.js, ASP.NET Core, PostgreSQL.
+Smoke MKK operates 39 self-service vending machines at 24 sites (vapes, drinks, snacks) around the Main-Kinzig-Kreis, Hessen (one site in Lohr, Bavaria); Vendon export of 2026-09-11, see §3. Their only web presence is a Linktree (https://linktr.ee/smoke.mkk) with one Google-Maps link per machine plus Instagram/TikTok. Goal: an own website that replaces the Linktree — a Vue SPA with an OpenStreetMap store finder where every machine is a marker and clicking it shows that machine's current inventory. A B2C/B2B shop follows later (§11). Everything runs in Docker: Vue.js, ASP.NET Core, PostgreSQL.
 
 **Phase 1 scope:** SPA (animated hero, map + inventory panel, machine cards, 18+ modal, Impressum/Datenschutz), a minimal API, Postgres, docker compose.
 
@@ -28,30 +28,73 @@ Smoke MKK operates 12 self-service vending machines (vapes, drinks, snacks) in H
 **Socials:** Instagram https://www.instagram.com/smoke.mkk · TikTok https://www.tiktok.com/@smokemkk
 **Logo:** https://ugc.production.linktr.ee/92cc0284-ca28-4922-bd77-869d631f5cd0_sdfsdf.png → download once to `frontend/public/logo.png` (F1).
 
-**Machines.** Coordinates from Nominatim (street addresses) or from the Google-Maps redirect URL (pins), then reverse-geocoded for a display address. Slugs are the seed's stable keys.
+**Machines.** Source since 2026-09-26: the operator's two Vendon exports of 2026-09-11 (`Standorte` = 24 sites with GPS, `Geräteübersicht` = 39 devices; not in git). One `Location` row = one **site** = one map marker; one `Machine` row = one **Vendon device** with its own stock list, and its `Id` is the Vendon device number (owner, 2026-09-26: one pin per site, the visitor picks the machine there). All sites are public (owner, 2026-09-26). Coordinates = Vendon GPS rounded to 5 decimals. Slugs are the seed's stable keys. Originally (2026-09-25) the list came from the Linktree + Nominatim; #7 stays as the inactive leftover of that.
 
-| # | slug | name | street | postal_code | city | lat | lng | is_active | note |
+| # | slug | name | street | postal_code | city | lat | lng | is_active (retired in B5) | devices (Vendon no.) · note |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | fulda | SMOKE Fulda | Niesiger Str. 69 | 36039 | Fulda | 50.56899 | 9.66503 | true | at Nahkauf supermarket |
-| 2 | weisskirchen | SMOKE Weisskirchen | Hoher Nickel 14 | 63110 | Rodgau | 50.05644 | 8.88740 | true | |
-| 3 | langenselbold | SMOKE Langenselbold | Steinweg 1A | 63505 | Langenselbold | 50.17634 | 9.04093 | true | |
-| 4 | schluechtern | SMOKE Schlüchtern | Krämerstraße 14 | 36381 | Schlüchtern | 50.34747 | 9.52716 | true | |
-| 5 | bad-orb | SMOKE Bad Orb | Jahnstraße 42 | 63619 | Bad Orb | 50.22044 | 9.35409 | true | Google pin |
-| 6 | jossgrund | SMOKE Jossgrund | Burgstraße 15 | 63637 | Jossgrund (Burgjoß) | 50.20378 | 9.48254 | true | Google pin |
-| 7 | burgjoss | SMOKE Burgjoss | *(unknown)* | 63637 | Jossgrund | 50.20380 | 9.48049 | **false** | Linktree link resolves to the Langenselbold pin (data error); coordinates = village centre; probably a duplicate of #6 — owner must confirm |
-| 8 | waechtersbach | SMOKE Wächtersbach | Poststraße 33 | 63607 | Wächtersbach | 50.25550 | 9.29381 | true | Google pin, low precision |
-| 9 | rothenbergen | SMOKE Rothenbergen | Alte Dorfstraße 2A | 63584 | Gründau | 50.19879 | 9.10918 | true | |
-| 10 | hesseldorf | SMOKE Hesseldorf | Brachttalstraße 18 | 63607 | Wächtersbach | 50.27203 | 9.30658 | true | Google pin |
-| 11 | hellstein | SMOKE Hellstein | Sandwerkstraße 2 | 63636 | Brachttal | 50.32034 | 9.30018 | true | Google pin |
-| 12 | lauterbach | SMOKE Lauterbach | Marktplatz | 36341 | Lauterbach | 50.63632 | 9.39614 | true | OSM already has a "Smoke" POI here |
+| 1 | fulda | SMOKE Fulda | Niesiger Str. 69 | 36039 | Fulda | 50.56904 | 9.66508 | true | 38 · at Nahkauf |
+| 2 | weisskirchen | SMOKE Weisskirchen | Hoher Nickel 14 | 63110 | Rodgau | 50.05631 | 8.88709 | true | 22 (plus one defective unit without site) |
+| 3 | langenselbold | SMOKE Langenselbold | Steinweg 1A | 63505 | Langenselbold | 50.17617 | 9.04094 | true | 23–26 |
+| 4 | schluechtern | SMOKE Schlüchtern | Krämerstraße 14A | 36381 | Schlüchtern | 50.34755 | 9.52710 | true | 28–32 · house number was 14 |
+| 5 | bad-orb | SMOKE Bad Orb Jahnstraße | Jahnstraße 33 | 63619 | Bad Orb | 50.22030 | 9.35482 | true | 07 · house number was 42; name gains the street now that Bad Orb has five sites |
+| 6 | jossgrund | SMOKE Jossgrund | Burgstraße 15 | 63637 | Jossgrund (Burgjoß) | 50.20363 | 9.48257 | true | 15, 16 |
+| 7 | burgjoss | SMOKE Burgjoss | *(unknown)* | 63637 | Jossgrund | 50.20380 | 9.48049 | — | not in Vendon → duplicate of #6 (Linktree data error); **no longer seeded** (B5); id 7 stays unused |
+| 8 | waechtersbach | SMOKE Wächtersbach | Poststraße 33 | 63607 | Wächtersbach | 50.25546 | 9.29360 | true | 02, 03 |
+| 9 | rothenbergen | SMOKE Rothenbergen | Alte Dorfstraße 2A | 63584 | Gründau | 50.19871 | 9.10919 | true | 27 |
+| 10 | hesseldorf | SMOKE Hesseldorf | Brachttalstraße 18 | 63607 | Wächtersbach | 50.27203 | 9.30658 | true | 01 |
+| 11 | hellstein | SMOKE Hellstein | Sandwerkstraße 2 | 63636 | Brachttal | 50.32064 | 9.29995 | true | 06 |
+| 12 | lauterbach | SMOKE Lauterbach | Marktplatz 7 | 36341 | Lauterbach | 50.63638 | 9.39617 | true | 34–37 · house number was missing |
+| 13 | bad-orb-kanalstrasse | SMOKE Bad Orb Kanalstraße | Kanalstraße 37 | 63619 | Bad Orb | 50.22502 | 9.34829 | true | 09–11 |
+| 14 | bad-orb-martinusstrasse | SMOKE Bad Orb Martinusstraße | Martinusstraße 14 | 63619 | Bad Orb | 50.23148 | 9.34326 | true | 08 · Vendon label "Heise" |
+| 15 | bad-orb-frankfurter-strasse | SMOKE Bad Orb Frankfurter Straße | Frankfurter Straße 4 | 63619 | Bad Orb | 50.22887 | 9.34495 | true | 12 · Vendon label "Caritas" |
+| 16 | bad-orb-wuerzburger-strasse | SMOKE Bad Orb Würzburger Straße | Würzburger Straße 51 | 63619 | Bad Orb | 50.22133 | 9.35580 | true | 13 · Vendon label "IG Metall" |
+| 17 | neuenschmidten | SMOKE Neuenschmidten | Birsteiner Straße 55 | 63636 | Brachttal | 50.31426 | 9.29194 | true | 05 |
+| 18 | spielberg | SMOKE Spielberg | Schulwaldstraße 2 | 63636 | Brachttal | 50.30785 | 9.26896 | true | 04 · Vendon label "Montone" |
+| 19 | lettgenbrunn | SMOKE Lettgenbrunn | Hindenburgstraße 7 | 63637 | Jossgrund | 50.17620 | 9.39456 | true | 17, 18 · golf course (driving range + halfway house) |
+| 20 | mernes | SMOKE Mernes | Orber Weg 35 | 63628 | Bad Soden-Salmünster | 50.23579 | 9.46929 | true | 14 · at Nahkauf |
+| 21 | neuberg | SMOKE Neuberg | Siedlung 2A | 63543 | Neuberg | 50.19158 | 8.99060 | true | 21 · Ravolzhausen |
+| 22 | steinau | SMOKE Steinau | Leipziger Straße 85 | 36396 | Steinau an der Straße | 50.31905 | 9.47210 | true | 33 |
+| 23 | kempfenbrunn | SMOKE Kempfenbrunn | Würzburger Straße 26 | 63639 | Flörsbachtal | 50.11118 | 9.44013 | true | 19 |
+| 24 | alsfeld | SMOKE Alsfeld | Enggasse 7 | 36304 | Alsfeld | 50.75151 | 9.27258 | true | 39 |
+| 25 | lohr | SMOKE Lohr | Willi-Bleicher-Straße 1 | 97816 | Lohr a. Main | 50.00629 | 9.57408 | true | 20 · Vendon label "IG Metall"; Bavaria |
 
-Google-Maps URLs for the `google_maps_url` column. #1–#4 use `https://www.google.com/maps/search/?api=1&query=<url-encoded address>`. #5–#12 use the original Linktree short links:
+**Machines per site** (`Machine.Id` = Vendon number, `Label` = Vendon's suffix; `""` when the site has one machine). Vendon's venue suffixes on single machines (Heise, Caritas, IG Metall, Nahkauf, Montone) are not labels. All 39 are active; the defective OMS unit without a site is not seeded.
+
+| site | machines (id label) |
+|---|---|
+| 1 fulda | 38 |
+| 2 weisskirchen | 22 |
+| 3 langenselbold | 23 Blau · 24 Pink · 25 Gelb · 26 Grün |
+| 4 schluechtern | 28 Pink · 29 Gelb · 30 Grün · 31 Blau · 32 Bunt |
+| 5 bad-orb | 7 |
+| 6 jossgrund | 15 Bunt · 16 Grün |
+| 8 waechtersbach | 2 Grün · 3 Bunt |
+| 9 rothenbergen | 27 |
+| 10 hesseldorf | 1 |
+| 11 hellstein | 6 |
+| 12 lauterbach | 34 Gelb · 35 Pink · 36 Grün · 37 Blau |
+| 13 bad-orb-kanalstrasse | 9 Blau · 10 Pink · 11 Grün |
+| 14 bad-orb-martinusstrasse | 8 |
+| 15 bad-orb-frankfurter-strasse | 12 |
+| 16 bad-orb-wuerzburger-strasse | 13 |
+| 17 neuenschmidten | 5 |
+| 18 spielberg | 4 |
+| 19 lettgenbrunn | 17 Halfway House · 18 Driving Range |
+| 20 mernes | 14 |
+| 21 neuberg | 21 |
+| 22 steinau | 33 |
+| 23 kempfenbrunn | 19 |
+| 24 alsfeld | 39 |
+| 25 lohr | 20 |
+
+24 sites, 39 machines.
+
+Google-Maps URLs for the `google_maps_url` column. #1–#4 and #13–#25 use `https://www.google.com/maps/search/?api=1&query=<url-encoded "street, postal_code city">`. #5–#12 use the original Linktree short links (their pins match the Vendon GPS within ~50 m):
 
 | # | google_maps_url |
 |---|---|
 | 5 | https://goo.gl/maps/xXyGLJiPCcnzB36h9 |
 | 6 | https://goo.gl/maps/xX4skQTj9qrPxpgu8 |
-| 7 | `null` — its Linktree link (https://maps.app.goo.gl/dHhCqpEpu9PtY9Xf7) points to Langenselbold, which is wrong |
 | 8 | https://goo.gl/maps/r33J2pLgynRgCQ8K8 |
 | 9 | https://maps.app.goo.gl/4w2qC9V7qHrYzuxk9 |
 | 10 | https://goo.gl/maps/AxoLgpYdEnATwhj67 |
@@ -134,15 +177,17 @@ C:\smokemkk\
 
 Entities (EF defaults, no naming plugin):
 
-- `Machine(Id, Slug, Name, Street, PostalCode, City, Lat, Lng, IsActive, GoogleMapsUrl)` — `Slug` unique
+- `Location(Id, Slug, Name, Street, PostalCode, City, Lat, Lng, GoogleMapsUrl)` — `Slug` unique; one map marker (B5)
+- `Machine(Id, LocationId, Label, IsActive)` — FK to `Location`; `Label` non-null, `""` when alone at its site; inventory hangs off the machine (B5; before B5 `Machine` carried the site fields)
 - `Product(Id, Name, Category, ImageUrl)` — `ImageUrl` is a nullable site-relative path (§3); `Category` is a C# enum `Vape | Tobacco | Accessory | Drink | Snack` (this declaration order is the sort order) stored as string (`HasConversion<string>()`), so a later age filter is a WHERE clause
 - `MachineInventory(MachineId, ProductId, Quantity, PriceCents, UpdatedAt)` — composite PK; `Quantity >= 0` and `PriceCents >= 0` as check constraints
 
 Rules:
 - JSON: camelCase (default) + `JsonStringEnumConverter` globally via `ConfigureHttpJsonOptions`.
-- `GET /api/machines` output-cached 60 s (`AddOutputCache`). Inventory endpoints are **not** cached, so a `PUT` is visible immediately.
+- `GET /api/locations` output-cached 60 s (`AddOutputCache`). Inventory endpoints are **not** cached, so a `PUT` is visible immediately.
 - API key: header `X-Api-Key` compared with `CryptographicOperations.FixedTimeEquals` against env `ADMIN_API_KEY`; missing env → the PUT returns 503 (never "open"). Never log the key.
-- Startup: `db.Database.Migrate()` (single replica → no separate migration container), then `Seed.Run(db)` = insert §3 only if `Machines` is empty, so operator edits are never overwritten. **Not** `HasData`.
+- Startup: `db.Database.Migrate()` (single replica → no separate migration container), then `Seed.Run(db)` = insert §3 only if `Machines` is empty (B5 keeps that check), so operator edits are never overwritten. **Not** `HasData`.
+- Migration `AddLocations` (B5) is data-preserving: it creates `Locations`, copies every existing `Machines` row into it 1:1 (same id, slug, name, address, coordinates, URL), sets the `Locations` id sequence past them, points `Machines.LocationId` at the copy, adds `Label` = `""`, then drops the moved columns. An existing database therefore keeps its sites, machines and stock (one machine per site); only a fresh database gets the §3 Vendon list.
 - `UseNpgsql(cs, o => o.EnableRetryOnFailure())` covers the first-boot window where `pg_isready` passes before the DB is fully created.
 - No repositories, services layer, MediatR, AutoMapper, or test project. DTOs are `record`s next to the endpoints in `Program.cs`.
 
@@ -214,7 +259,7 @@ Own components:
 **Marker drop-in (owner request, 2026-09-25).** When the map first scrolls into view, the markers are "placed" one after another, like pins dropped onto the map:
 - Trigger: a native `IntersectionObserver` on the map container (threshold ≈ 0.3), **once** per page load. Markers stay hidden until the map is visible. If machines load after the map is already visible, they drop in as soon as they arrive.
 - Animate an **inner element** of the `L.divIcon` HTML, never the icon element itself: Leaflet positions markers with `transform` on that element, and animating it would break placement on pan and zoom.
-- Motion: from `translateY(-28px) scale(0.6)`, opacity 0, to its place with a small overshoot bounce (ease-out-back), ≈ 450 ms, then a brief glow ring on landing. Stagger 50 ms per marker in west→east order (sort by `lng`), so 11 markers land in 950 ms, under 1 s (F4: 60 ms would take 1050 ms).
+- Motion: from `translateY(-28px) scale(0.6)`, opacity 0, to its place with a small overshoot bounce (ease-out-back), ≈ 450 ms, then a brief glow ring on landing. Stagger in west→east order (sort by `lng`): `min(50, 500 / (n − 1))` ms per marker, so the last one starts by 500 ms and lands by 950 ms, under 1 s, for any count (F15: 24 locations at a fixed 50 ms took ≈ 1.6 s).
 - CSS keyframes only, no new dependency. The selected-marker style and hover still work after landing.
 - Reduced motion: markers appear immediately, no drop and no ring.
 
@@ -289,16 +334,22 @@ Owned by the PM. `frontend/src/api.ts` mirrors these types verbatim; `backend/Pr
 ```ts
 export type Category = "Vape" | "Tobacco" | "Accessory" | "Drink" | "Snack";
 
-export interface Machine {
+export interface Location {   // one map marker (B5)
   id: number;
   slug: string;
   name: string;
-  street: string;        // "" when unknown (#7)
+  street: string;
   postalCode: string;
   city: string;
   lat: number;
   lng: number;
   googleMapsUrl: string | null;
+  machines: Machine[];   // active machines only, never empty; sorted by label, then id
+}
+
+export interface Machine {    // one vending machine; the id the inventory routes take
+  id: number;
+  label: string;         // "" when it is the only machine at its location, else e.g. "Grün", "Driving Range"
 }
 
 export interface InventoryItem {
@@ -325,7 +376,7 @@ export interface InventoryWrite {   // PUT body element
 
 | Route | Auth | Success | Errors |
 |---|---|---|---|
-| `GET /api/machines` | none | `200 Machine[]` — active machines only, sorted by `name`; cached 60 s | — |
+| `GET /api/locations` | none | `200 Location[]` — locations with at least one active machine, sorted by `name`; cached 60 s (replaces `GET /api/machines`, B5) | — |
 | `GET /api/machines/{id}/inventory` | none | `200 Inventory` | `404` machine missing or inactive |
 | `PUT /api/machines/{id}/inventory` | header `X-Api-Key` | `204` — **replaces** the machine's whole stock list with the body | `400` ProblemDetails: unknown `productId`, duplicate `productId`, `quantity < 0`, `priceCents < 0`, missing field, malformed JSON, zero-length body; `[]` is allowed and clears the stock · `401` missing/wrong key · `404` machine missing (inactive machines are accepted) · `503` `ADMIN_API_KEY` not configured. Checked in the order 503 → 401 → 404 → 400. |
 | `GET /health` | none | `200` text `ok` | — |
@@ -343,7 +394,7 @@ Informal *du*. No exclamation marks except the hero and rows marked *owner's wor
 | html title / og:title | `Smoke MKK - Vapes, Drinks, Snacks & More!` (owner's wording, 2026-09-25; knowingly English and with an exclamation mark) |
 | meta description / og:description | `Vapes, Drinks und Snacks aus dem Automaten, rund um die Uhr. Alle Standorte zwischen Rodgau und Fulda, mit Bestand auf der Karte.` |
 | hero.words | `Vapes` · `Tabak` · `Rauchzubehör` · `Drinks` · `Snacks` (FlipWords; all five categories in §5 order, same labels as `category.*`; the longest word must fit at 375 px without breaking or overflowing) |
-| hero.tagline | `{n}x im Main-Kinzig-Kreis und Umgebung` (owner's wording; n = active machines, computed, never hard-coded; `1x` needs no singular form) |
+| hero.tagline | `{n}x im Main-Kinzig-Kreis und Umgebung` (owner's wording; n = active machines = sum of `machines.length` over all locations (39), computed, never hard-coded; `1x` needs no singular form) |
 | hero.cta.map | `Automat in deiner Nähe finden` (owner's wording; primary button, first hero CTA, jumps to `#standorte`) |
 | hero.social.lead | `Folg uns, um nichts zu verpassen!` (owner's wording; small line directly above the Instagram/TikTok CTAs) |
 | hero.cta.instagram / tiktok | `Instagram` · `TikTok` |
@@ -363,16 +414,19 @@ Informal *du*. No exclamation marks except the hero and rows marked *owner's wor
 | stock.available / low / soldOut | `verfügbar` (qty > 3) · `fast weg` (1–3) · `ausverkauft` (0) |
 | category.Vape / Tobacco / Accessory / Drink / Snack | `Vapes` · `Tabak` · `Rauchzubehör` · `Drinks` · `Snacks` |
 | panel.route | `Route` (link in the panel header of the selected machine; was `card.route` until F10) |
+| panel.machinePicker | `Welcher Automat?` (legend of the machine picker; only at a location with 2+ machines) |
+| panel.machineFallback | `Automat {n}` (picker option when a machine's `label` is `""`; n = its 1-based position) |
+| location.machineCount | `{n} Automaten` (list row and marker tooltip, only when n ≥ 2; tooltip form `{display name} · {n} Automaten`, before `· Am nächsten`) |
 | panel.back | `Alle Automaten` (button at the top of the panel while a machine is selected; returns to the list) |
 | search.label | `PLZ oder Ort` (visible label of the panel's search field) |
 | search.placeholder | `z. B. 63607 oder Wächtersbach` |
 | search.noResults | `Da steht noch keiner. Schau auf der Karte, welcher Automat am nächsten ist.` |
-| search.count | `{n} Automaten` (singular `1 Automat`; screen-reader status only) |
+| search.count | `{n} Standorte` (singular `1 Standort`; screen-reader status only; counts list rows = locations, F15) |
 | geo.nearest | `Am nächsten` (badge on the nearest machine once the location is known) |
 | geo.you | `Dein Standort` (the visitor's dot on the map) |
 | geo.distance | `{km} km` (one decimal, `de-DE`, e.g. `3,2 km`; straight line) |
 | header.locations | `Standorte` (header link to `/#standorte`, on every page) |
-| machine display name | the machine `name` without its leading `SMOKE ` (e.g. `Fulda`), wherever a machine is named in the UI; the header carries the brand |
+| location display name | the location `name` without its leading `SMOKE ` (e.g. `Fulda`), wherever a location is named in the UI; the header carries the brand |
 | map.loadError | `Die Standorte konnten nicht geladen werden.` |
 | age.title | `Bist du 18 oder älter?` |
 | age.body | `Hier geht's auch um Vapes und Tabak. Die gibt's erst ab 18.` |
@@ -391,13 +445,13 @@ Runs once, by the PM, after both specialists have reported. A specialist's own b
 
 1. `docker compose up --build -d` → all three services healthy/running (`docker compose ps`).
 2. `curl -s http://localhost/health` → `ok`.
-3. `curl -s http://localhost/api/machines | jq length` → `11`.
+3. `curl -s http://localhost/api/locations | jq length` → `24`; `jq '[.[].machines[]] | length'` → `39`.
 4. `curl -s http://localhost/api/machines/1/inventory | jq '.items | length'` → `9`; `updatedAt` non-null.
 5. `curl -i -X PUT -H "X-Api-Key: $ADMIN_API_KEY" -H "Content-Type: application/json" -d '[{"productId":1,"quantity":0,"priceCents":1290}]' http://localhost/api/machines/1/inventory` → `204`; the inventory now has 1 item with quantity 0. Same call without key → `401`; with `productId: 999` → `400`.
 6. Browser at http://localhost: 18+ dialog appears; "Ja" closes it and it stays closed after reload; "Nein" shows the denial and blocks. With the flag cleared, `/impressum` loads without the dialog, and the dialog's legal links work in both states.
 7. Smoke intro dissolves on load (holds behind the 18+ dialog until "Ja"); absent under reduced motion. Hero: aurora backdrop, FlipWords cycling; with OS reduce-motion on, words render statically and inventory items appear without animation.
-8. Map: 11 brand-coloured markers, no broken images, all inside the initial viewport; click marker → map zooms onto it, panel shows name, address, Route, "Stand" and grouped items with the three stock states; pick a machine in the panel list → same; `Alle Automaten` → back to the list and the overview.
-9. `docker compose down` then `docker compose up -d` → data persists (volume), seed adds no duplicate rows (`jq length` still `11`).
+8. Map: 24 brand-coloured markers (hero tagline reads `39x`), no broken images, all inside the initial viewport; click marker → map zooms onto it, panel shows name, address, Route, "Stand" and grouped items with the three stock states; pick a machine in the panel list → same; Schlüchtern shows the `Welcher Automat?` picker with five options, switching loads that machine's stock; Fulda shows no picker; `Alle Automaten` → back to the list and the overview.
+9. `docker compose down` then `docker compose up -d` → data persists (volume), seed adds no duplicate rows (`/api/locations | jq length` still `24`).
 10. 375 px width: hero, map, panel stack; no horizontal scroll; a one-finger swipe over the map scrolls the page until the map is tapped. Keyboard: dialog buttons, markers, panel list and footer links reachable; focus visible.
 11. Console clean (no errors) on `/`, `/impressum`, `/datenschutz`; deep-link reload on `/impressum` works (nginx SPA fallback).
 
@@ -431,7 +485,13 @@ Runs once, by the PM, after both specialists have reported. A specialist's own b
 | **F12** | smokemkk-frontend | `frontend/src/components/SmokeIntro.vue`, new shared smoke module + scroll-smoke component under `frontend/src/`, `App.vue` (mount), `HomeView.vue` (divider markup if needed), `main.css` — `ui-ux-pro-max` first; §4.3 "Scroll smoke and smoking dividers". No new dependency, no new string. | `npm run build` clean; one texture generator in the tree; browser at 1280×800 and 375×812: scrolling spawns faint edge wisps that fade, none over the text column, no rAF/timers when idle; both dividers carry a thin smoke rim above and below, ~16 px on average with a random, ragged, slowly shifting reach (≈ 8–26 px) that flows outward from the line (no puffs, no wide band), no horizontal scroll; intro unchanged; reduced motion → neither effect; console clean | F11 |
 | **F13** | smokemkk-frontend | `frontend/src/views/HomeView.vue` — `ui-ux-pro-max` first; §4.3 "Headline down to the CTA, bigger". No new string. | `npm run build` clean; 1280×800 and 375×812: logo at the top, headline + tagline sit just above the button as one centred group, headline visibly bigger (report the px size at both widths), `RAUCHZUBEHÖR` on one line at 320 and 375 px, no layout jump while words swap, hero + pitch still fill the first screen at ≈ 60/40 without clipping, no horizontal scroll | F12 |
 | **F14** | smokemkk-frontend | `frontend/src/views/LegalView.vue` — the `DATENSCHUTZERKLÄRUNG` heading (30 px, 357 px wide) overflows: 14 px into the gutter at 375, page scrolls sideways at 320 (found in F13) → smaller on phones and/or `hyphens-auto break-words` (`lang="de"` is set) | `npm run build` clean; no horizontal scroll on `/impressum`, `/datenschutz` at 320 and 375 | — |
-| **T2** | PM | run §7; legal placeholder review; visually compare all 12 pins with the Google links; commit; update this file's status line | §7 all green | B1, F1, Docker Desktop |
+| **B4** | smokemkk-backend | `backend/Seed.cs` only — machine list per §3 (Vendon, 2026-09-26): #1–#12 updated (coordinates, #4/#5/#12 address, #5 name), #13–#25 added; new sites use the search-URL overload; stock rows for every active machine as before; no migration, no new column | `dotnet build backend -warnaserror` clean; `has-pending-model-changes` none; freshly seeded DB: `GET /api/machines` → 24, each new id has 13 inventory items | §3 |
+| **B5** | smokemkk-backend | `backend/**` — §4.2 `Location` + `Machine` split, migration `AddLocations` (data-preserving, per §4.2), `GET /api/locations` replacing `GET /api/machines` per §5 (`LocationDto` with nested `MachineDto(Id, Label)`), inventory GET/PUT unchanged; seed per §3 "Machines per site" (24 locations, 39 machines, #7 dropped, ids = Vendon numbers, stock rows for all 13 products on every machine) | `dotnet build backend -warnaserror` clean; exactly three migrations, `has-pending-model-changes` none; migration applied to a DB seeded by the previous code keeps its 11 active sites and their stock; fresh DB: 24 locations, 39 machines, `GET /api/machines/32/inventory` → 13 items | §3, §4.2, §5 |
+| **F15** | smokemkk-frontend | `frontend/**` — `ui-ux-pro-max` first; mirror §5 (`Location`, `Machine`, `fetchLocations`; `placeName` takes a location); map, list, search, nearest and selection work on locations; detail view: at 2+ machines a native radio group (`fieldset` + `legend` `panel.machinePicker`, pill-styled, ≥ 44 px, arrow keys, visible focus) between the header and the stock, first machine preselected, switching fetches that machine's inventory (same cross-fade, keyed by machine id), `panel.summary` / `Stand` / empty states are per machine; one machine → no picker; `location.machineCount` in list rows and tooltips; hero `{n}x` = machine total; new §6 strings only | `npm run build` clean; against the B5 API at 1280×800 and 375×812: 24 markers, tagline `39x`, Schlüchtern → five options, each loads its own stock, keyboard only works; Fulda → no picker; list shows `5 Automaten` on Schlüchtern; search `63619` → the five Bad Orb sites; no horizontal scroll; console clean | §5, §6, B5 |
+| **F16** | smokemkk-frontend | `frontend/src/components/InventoryPanel.vue` — `ui-ux-pro-max` first; owner, 2026-09-26: in the selected machine's stock list the prices touch the scrollbar. The scroll box (`scrollBox`) gets a right inner gap between content and scrollbar (e.g. `pr-3`, plus `scrollbar-gutter: stable` so the layout does not jump when the list starts or stops scrolling); the list view uses the same box and keeps looking right. No new string, no new dependency. | `npm run build` clean; browser at 1280×800 and 375×812 against the running API: Schlüchtern → prices keep a visible gap (≈ 12 px) to the scrollbar, nothing clipped, no horizontal scroll, list view unchanged apart from the gap | F15 |
+| **F17** | smokemkk-frontend | `frontend/src/components/InventoryPanel.vue` — `ui-ux-pro-max` first; owner, 2026-09-26 (screenshot): while the stock list scrolls, items show above and beside the sticky category heading, so heading and item appear to overlap. The heading must fully cover what scrolls under it: no gap between the scroll box's top edge and the stuck heading (move the box's top padding off the scroll container or offset the sticky top), the heading background spans the full box width including the F16 right gap, and a subtle bottom separator (hairline in `--border` or a short fade) while stuck. F16 follow-up (PM): the right gap only from `md` up (`md:pr-3`); phones have overlay scrollbars and keep symmetric 20 px sides. No new string, no new dependency. | `npm run build` clean; 1280×800 and 375×812, Schlüchtern, scrolled to several positions: no item pixels visible above or beside the stuck heading, headings hand over cleanly between groups, price gap to scrollbar still ≈ 12 px on desktop, phone sides symmetric; no horizontal scroll; console clean | F16 |
+| **F19** | smokemkk-frontend | `frontend/src/views/HomeView.vue` (and `InventoryPanel.vue` only if a spacing tweak is needed) — `ui-ux-pro-max` first; owner, 2026-09-26: the selected machine's stock list shows only ≈ 2 products at 1280×800 because map and panel share a fixed `md:h-[30rem]`. From `md` up, map and panel height = the viewport below the sticky header, e.g. `md:h-[clamp(30rem,calc(100svh-7rem),52rem)]` on both, so the whole block fits on screen once scrolled to and the stock list gets the extra room; below `md` unchanged (the panel already grows with the page). Map fit-to-bounds still shows all 24 locations. No new string, no new dependency. | `npm run build` clean; 1280×800: Schlüchtern shows ≥ 4 full product rows without scrolling the list, map + panel fully visible with the section scrolled below the header; 1280×1024 and 1920×1080: taller but capped, nothing stretched oddly; 375×812 unchanged; hash jump to `#standorte` still lands below the header; no horizontal scroll; console clean | F17 |
+| **T2** | PM | run §7; legal placeholder review; visually compare all 24 pins with the Google links; commit; update this file's status line | §7 all green | B1, F1, Docker Desktop |
 
 B1 and F1 run **in parallel** — disjoint paths, contract already fixed. The migration is created once, in B1, by the backend specialist; nobody else runs `dotnet ef`.
 

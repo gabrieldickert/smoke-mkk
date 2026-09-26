@@ -1,6 +1,6 @@
 # Smoke MKK
 
-Website and store finder for Smoke MKK's vending machines (vapes, drinks, snacks) in Hessen.
+Website and store finder for Smoke MKK's vending machines (vapes, drinks, snacks) in and around the Main-Kinzig-Kreis.
 Vue 3 SPA with an OpenStreetMap map, ASP.NET Core API, PostgreSQL, all in Docker.
 
 Plan and rules: [`docs/PLAN.md`](docs/PLAN.md). Agent setup: [`CLAUDE.md`](CLAUDE.md).
@@ -53,7 +53,7 @@ Migrations: `dotnet tool restore` inside `backend/`, then `dotnet ef migrations 
 
 ## Update a machine's stock
 
-The request replaces the machine's whole stock list.
+The request replaces the machine's whole stock list. The machine id is the Vendon device number (`[32]` in Vendon is `/api/machines/32/inventory`); `GET /api/locations` lists every site with its machines.
 
 ```bash
 curl -X PUT http://localhost/api/machines/1/inventory \
@@ -74,5 +74,4 @@ Use your own photos or packshots you have the rights to. Do not copy brand image
 
 - TODO: real product catalogue (the seed is a placeholder).
 - TODO: product photos for the 9 seeded products (see "Product images").
-- TODO: machine "Burgjoss" has no known address; it is hidden until confirmed.
 - TODO: Impressum and Datenschutz texts.

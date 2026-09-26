@@ -6,7 +6,7 @@ If a request conflicts with a rule here or in `docs/PLAN.md`, say so and propose
 
 ## 0. What this is
 
-**Smoke MKK** operates 12 self-service vending machines (vapes, drinks, snacks) in Hessen, Germany. This repository is their website: a **Vue 3 SPA with an OpenStreetMap store finder** — one marker per machine, click → that machine's current inventory — backed by a **minimal ASP.NET Core API** and **PostgreSQL**, all in **docker compose**. A B2C/B2B shop follows in later phases; only the data model anticipates it.
+**Smoke MKK** operates 39 self-service vending machines at 24 sites (vapes, drinks, snacks) around the Main-Kinzig-Kreis, Hessen. This repository is their website: a **Vue 3 SPA with an OpenStreetMap store finder** — one marker per machine, click → that machine's current inventory — backed by a **minimal ASP.NET Core API** and **PostgreSQL**, all in **docker compose**. A B2C/B2B shop follows in later phases; only the data model anticipates it.
 
 Phase 1 is being built now. The tree held only docs and agent definitions on 2026-09-25; `docs/PLAN.md` §9 says what exists.
 

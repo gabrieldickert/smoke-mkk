@@ -41,11 +41,14 @@ using (var scope = app.Services.CreateScope())
 
 app.MapGet("/health", () => "ok");
 
-app.MapGet("/api/machines", (AppDb db) =>
-        db.Machines
-            .Where(m => m.IsActive)
-            .OrderBy(m => m.Name)
-            .Select(m => new MachineDto(m.Id, m.Slug, m.Name, m.Street, m.PostalCode, m.City, m.Lat, m.Lng, m.GoogleMapsUrl))
+// Locations with at least one active machine; inactive machines are left out of the nested list.
+app.MapGet("/api/locations", (AppDb db) =>
+        db.Locations
+            .Where(l => l.Machines.Any(m => m.IsActive))
+            .OrderBy(l => l.Name)
+            .Select(l => new LocationDto(l.Id, l.Slug, l.Name, l.Street, l.PostalCode, l.City, l.Lat, l.Lng, l.GoogleMapsUrl,
+                l.Machines.Where(m => m.IsActive).OrderBy(m => m.Label).ThenBy(m => m.Id)
+                    .Select(m => new MachineDto(m.Id, m.Label)).ToList()))
             .ToListAsync())
     .CacheOutput(p => p.Expire(TimeSpan.FromSeconds(60)));
 
@@ -141,7 +144,8 @@ app.MapPut("/api/machines/{id:int}/inventory", async (int id, HttpRequest reques
 app.Run();
 
 // docs/PLAN.md §5 — wire names are camelCase (System.Text.Json web defaults), enums as strings.
-record MachineDto(int Id, string Slug, string Name, string Street, string PostalCode, string City, double Lat, double Lng, string? GoogleMapsUrl);
+record LocationDto(int Id, string Slug, string Name, string Street, string PostalCode, string City, double Lat, double Lng, string? GoogleMapsUrl, List<MachineDto> Machines);
+record MachineDto(int Id, string Label);
 record InventoryItemDto(int ProductId, string Name, Category Category, string? ImageUrl, int Quantity, int PriceCents);
 record InventoryDto(int MachineId, DateTime? UpdatedAt, List<InventoryItemDto> Items);
 record InventoryWrite(int ProductId, int Quantity, int PriceCents);
