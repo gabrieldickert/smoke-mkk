@@ -663,6 +663,7 @@ html:has(.smoke-intro) .age-gate::backdrop {
   }
   /* App.vue never mounts it under reduced motion; this covers a preference flipped mid-intro. */
   .smoke-intro,
+  .smoke-section,
   .scroll-smoke {
     display: none;
   }

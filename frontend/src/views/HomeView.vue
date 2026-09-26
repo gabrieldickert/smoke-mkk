@@ -6,6 +6,7 @@ import InventoryPanel from '../components/InventoryPanel.vue'
 import MachineMap from '../components/MachineMap.vue'
 import Reveal from '../components/Reveal.vue'
 import SmokeDivider from '../components/SmokeDivider.vue'
+import SmokeIntro from '../components/SmokeIntro.vue'
 import SocialLinks from '../components/SocialLinks.vue'
 import AuroraBackground from '../components/ui/AuroraBackground.vue'
 import FlipWords from '../components/ui/FlipWords.vue'
@@ -69,7 +70,51 @@ onMounted(async () => {
   }
 })
 
-onUnmounted(() => caretObserver?.disconnect())
+// Section smoke reveal (docs/PLAN.md §4.3, F22): a small replay of the intro over #standorte the
+// first time it is reached, once per full page load (module flag below the script). The owner:
+// the map is never seen uncovered. So the cloud is already there, thick and holding, when the
+// section scrolls in: `approach` (half a viewport ahead) mounts it held and drops it again if
+// the visitor turns back before the reveal (no rAF off screen). `reveal` (the section's top past
+// the lower third of the viewport; unlike a ratio threshold this also fires for a section taller
+// than 3 viewports) releases the hold, sets the flag and ends both observers. A jump that fires
+// both at once mounts and dissolves in one step; the base is opaque on its first paint either
+// way. Skipped at the reveal, flag set, while App.vue's page-load intro (.smoke-intro) is still
+// up; never under reduced motion. The approach ignores the intro, so a cloud held under it is
+// already in place if the intro ends while the section is near.
+const sectionSmoke = ref(false)
+const smokeHold = ref(true)
+let approach: IntersectionObserver | null = null
+let reveal: IntersectionObserver | null = null
+
+onMounted(() => {
+  if (sectionSmokeSeen || !mapSection.value) return
+  approach = new IntersectionObserver(
+    (entries) => {
+      const e = entries[entries.length - 1]
+      if (e && !sectionSmokeSeen) sectionSmoke.value = e.isIntersecting && !reduceMotion.value
+    },
+    { rootMargin: '0px 0px 50% 0px' },
+  )
+  reveal = new IntersectionObserver(
+    (entries) => {
+      if (!entries.some((e) => e.isIntersecting)) return
+      approach?.disconnect()
+      reveal?.disconnect()
+      sectionSmokeSeen = true
+      sectionSmoke.value = !reduceMotion.value && !document.querySelector('.smoke-intro')
+      smokeHold.value = false
+    },
+    { rootMargin: '0px 0px -33% 0px' },
+  )
+  approach.observe(mapSection.value)
+  reveal.observe(mapSection.value)
+})
+
+onUnmounted(() => {
+  caretObserver?.disconnect()
+  approach?.disconnect()
+  reveal?.disconnect()
+})
 
 function scrollToMap() {
   mapSection.value?.scrollIntoView({
@@ -121,6 +166,12 @@ function jumpToMap() {
   focusMap()
   if (status.value !== 'error') locate(true)
 }
+</script>
+
+<script lang="ts">
+// Module scope (not per instance): the F22 section smoke plays once per full page load, so SPA
+// navigation away and back to / does not replay it. No storage.
+let sectionSmokeSeen = false
 </script>
 
 <template>
@@ -316,7 +367,7 @@ function jumpToMap() {
       ref="mapSection"
       aria-labelledby="standorte-heading"
       tabindex="-1"
-      class="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 focus:outline-none"
+      class="relative mx-auto max-w-6xl scroll-mt-20 px-4 py-16 focus:outline-none"
     >
       <Reveal>
         <h2 id="standorte-heading" class="text-3xl font-bold uppercase tracking-tight sm:text-4xl">
@@ -355,6 +406,8 @@ function jumpToMap() {
           />
         </div>
       </Reveal>
+      <!-- F22 section smoke reveal: last child, absolute over the section (relative), gone on done. -->
+      <SmokeIntro v-if="sectionSmoke" section :hold="smokeHold" @done="sectionSmoke = false" />
     </section>
   </div>
 </template>

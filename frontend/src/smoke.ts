@@ -102,7 +102,8 @@ function renderSprite(f: Float32Array, i: number, smoke: Rgb, tint: Rgb): HTMLCa
       const ridge = 1 - Math.abs(sample(f, x * 1.6 + wy * 260 + oy, y * 1.6 + wx * 260 + ox) - 0.5) * 2
       const r2 = ridge * ridge
       const fil = r2 * r2 * r2
-      const a = fall * clamp01(0.08 + 0.8 * billow * billow + 0.45 * fil * (0.4 + billow))
+      let a = fall * clamp01(0.08 + 0.8 * billow * billow + 0.45 * fil * (0.4 + billow))
+      a *= clamp01((1 - Math.hypot(nx, ny)) / 0.2) // the warped edge left up to 16 % alpha on the square border: a straight line
       const t = clamp01((sample(f, x * 0.3 + oy, y * 0.3 + ox) - 0.45) * 2.5) * 0.45
       const k = (y * SPRITE_PX + x) * 4
       px[k] = smoke[0] + (tint[0] - smoke[0]) * t
