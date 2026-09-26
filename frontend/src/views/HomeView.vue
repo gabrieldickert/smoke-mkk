@@ -343,7 +343,7 @@ let sectionSmokeSeen = false
                flips visibility first. Instant with reduced motion (global rule in main.css). -->
           <a
             href="#standorte"
-            aria-label="Unsere Automaten"
+            aria-label="Unsere Standorte"
             :class="[
               'absolute bottom-1 left-1/2 grid size-11 -translate-x-1/2 place-items-center rounded-full text-muted-foreground hover:text-foreground',
               caretHidden
@@ -386,7 +386,7 @@ let sectionSmokeSeen = false
     >
       <Reveal>
         <h2 id="standorte-heading" class="text-3xl font-bold uppercase tracking-tight sm:text-4xl">
-          Unsere Automaten
+          Unsere Standorte
         </h2>
         <p class="mt-3 max-w-2xl text-muted-foreground text-pretty sm:text-lg">
           <strong class="font-semibold text-foreground">Hast du Lust auf Snacks, Drinks and more?</strong>

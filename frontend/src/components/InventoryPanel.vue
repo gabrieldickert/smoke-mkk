@@ -451,9 +451,10 @@ const scrollBox =
 
         <template v-else>
           <!-- Same small uppercase label the old panel title had: the section's h2 sits right above,
-               so the panel heading stays quiet; in the detail view the location name is the h3. -->
+               so the panel heading stays quiet; in the detail view the location name is the h3.
+               §6 panel.title: the fixed total of locations, not the search matches (F26). -->
           <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-secondary">
-            Alle Automaten
+            {{ status === 'ready' ? `Alle ${locations.length} Standorte` : 'Alle Standorte' }}
           </h3>
           <template v-if="status !== 'error'">
             <p class="mt-2 text-muted-foreground">
