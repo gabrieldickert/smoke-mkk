@@ -353,6 +353,229 @@ html.light {
   }
 }
 
+/* Smoking dividers (docs/PLAN.md §4.3 "Scroll smoke and smoking dividers", third version): a thin
+   smoke rim hugging each glowing divider, flowing outward from the line: the upper strip's texture
+   drifts up, the lower strip's down, each on a slant (never straight), densest at the line and fading towards both ends like the line
+   (container mask). The line itself is not covered.
+   Ragged reach: each strip is --rim-max (36 px) tall and masked by
+     (a short fade, full at the line, 0 at 10 px)  ∪  (reach tile A  ∩  reach tile B  ∩  a long
+     fade, 0 at 82 % ≈ 30 px),
+   both fades eased (smoothstep stops), the long one ending well inside the clip, so no edge is
+   ever cut (owner: "no visible hard cut"). The reach tile (src/smoke.ts renderReach) is a large
+   square of broad, soft, low-contrast noise blobs (blurred once at generation), used twice at incommensurate square sizes (so the ragged edge does not repeat along the
+   line): where both are dense the smoke reaches ~24 px, where either is thin only ~8 px, with
+   soft wisps rather than cut-out shapes in between. Both
+   layers drift one of their tiles outward and one sideways per cycle, in opposite sideways
+   directions, so the edge keeps changing shape in place and never runs straight. Upper and lower
+   strips use their own sizes, offsets, direction and speed, so they vary independently.
+   Flow: each strip clips a sway wrapper holding two oversized layers (::before tile A, ::after
+   tile B) with the shared seamless tile (src/smoke.ts; App.vue sets --smoke-tile-a/-b and
+   .smoke-rim, hidden until then), at incommensurate sizes and speeds, so no period shows along the
+   line. Never straight up or down (owner): each layer drifts outward on its own slant, a whole
+   number of tiles on both axes per cycle (1:3, 1:2 or 2:3 across:out ≈ 18°, 27°, 34°, so the loop is
+   seamless), leaning left or right at random; the two layers of a strip always take different
+   slants, so they cross or fan out and billow. The wrapper sways ±5–10 px sideways (eased,
+   alternate, a few seconds per swing), so the direction also wanders over time. Tiles are always
+   square (same px on both axes) and only translated, never scaled per axis, so the smoke is never
+   stretched; at 100–150 px a 36 px window still shows billows, not streaks. Slants, speeds, tile
+   sizes, offsets, sway and phases are random per layer, strip, divider and load (smokeRimStyle(),
+   inline custom properties).
+   Absolutely positioned and clipped: no layout shift, no horizontal overflow. Reduced motion:
+   animation: none (global rule) leaves a static rim. Owner's exception to the no-endless-animation
+   rule, like the pulse. */
+.divider-smoke {
+  --rim-max: 36px;
+  display: none;
+  position: absolute;
+  inset-inline: 0;
+  top: calc(-1 * var(--rim-max));
+  bottom: calc(-1 * var(--rim-max));
+  pointer-events: none;
+  /* eased (smoothstep) towards both ends, like the line: no crease where the fade starts */
+  -webkit-mask-image: linear-gradient(to right, transparent 0.0%, rgb(0 0 0 / 0.156) 4.5%, rgb(0 0 0 / 0.500) 9.0%, rgb(0 0 0 / 0.844) 13.5%, #000 18.0%, #000 82.0%, rgb(0 0 0 / 0.844) 86.5%, rgb(0 0 0 / 0.500) 91.0%, rgb(0 0 0 / 0.156) 95.5%, transparent 100.0%);
+  mask-image: linear-gradient(to right, transparent 0.0%, rgb(0 0 0 / 0.156) 4.5%, rgb(0 0 0 / 0.500) 9.0%, rgb(0 0 0 / 0.844) 13.5%, #000 18.0%, #000 82.0%, rgb(0 0 0 / 0.844) 86.5%, rgb(0 0 0 / 0.500) 91.0%, rgb(0 0 0 / 0.156) 95.5%, transparent 100.0%);
+}
+.smoke-rim .divider-smoke {
+  display: block;
+}
+.divider-smoke > span {
+  position: absolute;
+  inset-inline: 0;
+  height: var(--rim-max);
+  overflow: clip;
+  opacity: 0.85;
+  /* layers top-first: short fade ∪ (reach A ∩ reach B ∩ long fade); the bottom layer's operator is
+     unused. Reach tiles square (same px on both axes). Both fades are eased (1 − smoothstep, several
+     stops, no kink); the long one is 0 from 82 % (≈ 30 px) of the 36 px strip, so nothing ever
+     reaches the clip edge. */
+  -webkit-mask-image:
+    linear-gradient(var(--fade-dir), #000 0px, rgb(0 0 0 / 0.896) 2px, rgb(0 0 0 / 0.648) 4px, rgb(0 0 0 / 0.352) 6px, rgb(0 0 0 / 0.104) 8px, transparent 10px),
+    var(--smoke-reach),
+    var(--smoke-reach),
+    linear-gradient(var(--fade-dir), #000 0.00%, rgb(0 0 0 / 0.957) 10.25%, rgb(0 0 0 / 0.844) 20.50%, rgb(0 0 0 / 0.684) 30.75%, rgb(0 0 0 / 0.500) 41.00%, rgb(0 0 0 / 0.316) 51.25%, rgb(0 0 0 / 0.156) 61.50%, rgb(0 0 0 / 0.043) 71.75%, transparent 82.00%);
+  mask-image:
+    linear-gradient(var(--fade-dir), #000 0px, rgb(0 0 0 / 0.896) 2px, rgb(0 0 0 / 0.648) 4px, rgb(0 0 0 / 0.352) 6px, rgb(0 0 0 / 0.104) 8px, transparent 10px),
+    var(--smoke-reach),
+    var(--smoke-reach),
+    linear-gradient(var(--fade-dir), #000 0.00%, rgb(0 0 0 / 0.957) 10.25%, rgb(0 0 0 / 0.844) 20.50%, rgb(0 0 0 / 0.684) 30.75%, rgb(0 0 0 / 0.500) 41.00%, rgb(0 0 0 / 0.316) 51.25%, rgb(0 0 0 / 0.156) 61.50%, rgb(0 0 0 / 0.043) 71.75%, transparent 82.00%);
+  -webkit-mask-size: 100% 100%, var(--reach-s) var(--reach-s), var(--reach-s2) var(--reach-s2), 100% 100%;
+  mask-size: 100% 100%, var(--reach-s) var(--reach-s), var(--reach-s2) var(--reach-s2), 100% 100%;
+  -webkit-mask-repeat: no-repeat, repeat, repeat, no-repeat;
+  mask-repeat: no-repeat, repeat, repeat, no-repeat;
+  -webkit-mask-position: 0 0, var(--reach-x) var(--reach-y), var(--reach-x2) var(--reach-y2), 0 0;
+  mask-position: 0 0, var(--reach-x) var(--reach-y), var(--reach-x2) var(--reach-y2), 0 0;
+  -webkit-mask-composite: source-over, source-in, source-in, source-over;
+  mask-composite: add, intersect, intersect, add;
+  animation: rim-reach var(--reach-dur) linear var(--reach-delay) infinite;
+}
+.divider-smoke > span:first-child {
+  top: 0;
+  --fade-dir: to top;
+  --reach-out: -1; /* the mask drifts up */
+  --reach-dir: var(--rim-up-reach-dir, 1);
+  --reach-s: var(--rim-up-reach-s, 200px);
+  --reach-s2: var(--rim-up-reach-s2, 290px);
+  --reach-x: var(--rim-up-reach-x, 0px);
+  --reach-y: var(--rim-up-reach-y, 0px);
+  --reach-x2: var(--rim-up-reach-x2, 0px);
+  --reach-y2: var(--rim-up-reach-y2, 0px);
+  --reach-dur: var(--rim-up-reach-dur, 33s);
+  --reach-delay: var(--rim-up-reach-delay, 0s);
+  --x: var(--rim-up-x, 0px);
+  --out: -1; /* the texture drifts up */
+  --sway: var(--rim-up-sway, 6px);
+  --sway-dur: var(--rim-up-sway-dur, 4s);
+  --sway-delay: var(--rim-up-sway-delay, 0s);
+  --tx1: var(--rim-up-1-tx, 100px);
+  --ty1: var(--rim-up-1-ty, 200px);
+  --ox1: var(--rim-up-1-ox, 100px);
+  --dur1: var(--rim-up-1-dur, 12s);
+  --delay1: var(--rim-up-1-delay, 0s);
+  --tx2: var(--rim-up-2-tx, -140px);
+  --ty2: var(--rim-up-2-ty, 420px);
+  --ox2: var(--rim-up-2-ox, 140px);
+  --dur2: var(--rim-up-2-dur, 24s);
+  --delay2: var(--rim-up-2-delay, 0s);
+}
+.divider-smoke > span:last-child {
+  bottom: 0;
+  --fade-dir: to bottom;
+  --reach-out: 1; /* the mask drifts down */
+  --reach-dir: var(--rim-down-reach-dir, -1);
+  --reach-s: var(--rim-down-reach-s, 220px);
+  --reach-s2: var(--rim-down-reach-s2, 330px);
+  --reach-x: var(--rim-down-reach-x, 0px);
+  --reach-y: var(--rim-down-reach-y, 0px);
+  --reach-x2: var(--rim-down-reach-x2, 0px);
+  --reach-y2: var(--rim-down-reach-y2, 0px);
+  --reach-dur: var(--rim-down-reach-dur, 37s);
+  --reach-delay: var(--rim-down-reach-delay, 0s);
+  --x: var(--rim-down-x, 0px);
+  --out: 1; /* the texture drifts down */
+  --sway: var(--rim-down-sway, -6px);
+  --sway-dur: var(--rim-down-sway-dur, 4.6s);
+  --sway-delay: var(--rim-down-sway-delay, 0s);
+  --tx1: var(--rim-down-1-tx, -100px);
+  --ty1: var(--rim-down-1-ty, 300px);
+  --ox1: var(--rim-down-1-ox, 100px);
+  --dur1: var(--rim-down-1-dur, 18s);
+  --delay1: var(--rim-down-1-delay, 0s);
+  --tx2: var(--rim-down-2-tx, 280px);
+  --ty2: var(--rim-down-2-ty, 420px);
+  --ox2: var(--rim-down-2-ox, 280px);
+  --dur2: var(--rim-down-2-dur, 26s);
+  --delay2: var(--rim-down-2-delay, 0s);
+}
+/* each reach layer: one of its tiles outward and one sideways per cycle (the two in opposite
+   sideways directions): seamless, and the ragged edge changes shape */
+@keyframes rim-reach {
+  to {
+    -webkit-mask-position:
+      0 0,
+      calc(var(--reach-x) + var(--reach-dir) * var(--reach-s))
+        calc(var(--reach-y) + var(--reach-out) * var(--reach-s)),
+      calc(var(--reach-x2) - var(--reach-dir) * var(--reach-s2))
+        calc(var(--reach-y2) + var(--reach-out) * var(--reach-s2)),
+      0 0;
+    mask-position:
+      0 0,
+      calc(var(--reach-x) + var(--reach-dir) * var(--reach-s))
+        calc(var(--reach-y) + var(--reach-out) * var(--reach-s)),
+      calc(var(--reach-x2) - var(--reach-dir) * var(--reach-s2))
+        calc(var(--reach-y2) + var(--reach-out) * var(--reach-s2)),
+      0 0;
+  }
+}
+/* the sway wrapper: an eased side-to-side swing on top of the layers' slanted drift */
+.divider-smoke > span > span {
+  position: absolute;
+  inset: 0;
+  animation: rim-sway var(--sway-dur) ease-in-out var(--sway-delay) infinite alternate;
+}
+@keyframes rim-sway {
+  from {
+    transform: translateX(calc(-1 * var(--sway)));
+  }
+  to {
+    transform: translateX(var(--sway));
+  }
+}
+/* the layers: oversized by the drift (--ty outward, --ox + 16 px, the sway's headroom, sideways) */
+.divider-smoke > span > span::before,
+.divider-smoke > span > span::after {
+  content: "";
+  position: absolute;
+  left: calc(-1 * (var(--ox) + 16px));
+  right: calc(-1 * (var(--ox) + 16px));
+  height: calc(100% + var(--ty));
+  background-image: var(--smoke-tile-a);
+  background-size: var(--ts) var(--ts); /* square: 1:1, never stretched */
+  background-position: var(--x) 0;
+  opacity: 0.7;
+  animation: rim-flow var(--dur) linear var(--delay) infinite;
+}
+.divider-smoke > span > span::before {
+  --ts: var(--rim-s, 100px);
+  --tx: var(--tx1);
+  --ty: var(--ty1);
+  --ox: var(--ox1);
+  --dur: var(--dur1);
+  --delay: var(--delay1);
+}
+.divider-smoke > span > span::after {
+  --ts: var(--rim-s2, 140px);
+  --tx: var(--tx2);
+  --ty: var(--ty2);
+  --ox: var(--ox2);
+  --dur: var(--dur2);
+  --delay: var(--delay2);
+  background-image: var(--smoke-tile-b);
+  background-position: calc(var(--x) * -1.7) 0;
+}
+.divider-smoke > span:first-child > span::before,
+.divider-smoke > span:first-child > span::after {
+  top: 0;
+}
+.divider-smoke > span:last-child > span::before,
+.divider-smoke > span:last-child > span::after {
+  bottom: 0;
+}
+/* whole tiles on both axes per cycle: seamless */
+@keyframes rim-flow {
+  to {
+    transform: translate(var(--tx), calc(var(--out) * var(--ty)));
+  }
+}
+
+/* Smoke intro (SmokeIntro.vue, docs/PLAN.md §4.3): while the smoke is up it is the age gate's
+   backdrop, so the dialog's own backdrop (bg-background/90 + blur) turns into a light veil that lets
+   it read through. No backdrop blur here: re-blurring an animated canvas every frame is slow on
+   phones. The dialog card keeps its surface and contrast. Unlayered, so it beats the utilities. */
+html:has(.smoke-intro) .age-gate::backdrop {
+  background: color-mix(in srgb, var(--background) 35%, transparent);
+  backdrop-filter: none;
+}
+
 /* Route change fade (App.vue <Transition name="fade" mode="out-in">). */
 .fade-enter-active {
   transition: opacity 200ms ease-out;
@@ -377,6 +600,12 @@ html.light {
   .fade-leave-active {
     transition: none;
   }
+  /* App.vue never mounts it under reduced motion; this covers a preference flipped mid-intro. */
+  .smoke-intro,
+  .scroll-smoke {
+    display: none;
+  }
+  /* the divider smoke rim stays, as a static texture: animation: none below */
 
   *,
   *::before,

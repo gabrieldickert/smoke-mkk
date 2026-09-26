@@ -6,6 +6,10 @@ const FLAG = 'ageConfirmed'
 // Legal pages stay reachable without confirming (CLAUDE.md §5.5, docs/PLAN.md §4.3 F10).
 const OPEN_ROUTES = new Set(['impressum', 'datenschutz'])
 
+// "closed": the gate is settled and shut (confirmed, a legal page, or "Ja"). App.vue lets the
+// smoke intro dissolve on it (docs/PLAN.md §4.3 "Smoke intro"). Repeats are harmless.
+const emit = defineEmits<{ closed: [] }>()
+
 const route = useRoute()
 const router = useRouter()
 const dialog = ref<HTMLDialogElement | null>(null)
@@ -30,6 +34,7 @@ function sync() {
   const shouldOpen = !confirmed && !OPEN_ROUTES.has(String(route.name))
   if (shouldOpen && !d.open) d.showModal()
   else if (!shouldOpen && d.open) d.close()
+  if (!d.open) emit('closed')
 }
 
 onMounted(async () => {
@@ -66,7 +71,7 @@ const legalLink =
     closedby="none"
     :aria-labelledby="denied ? 'age-denied' : 'age-title'"
     :aria-describedby="denied ? undefined : 'age-body'"
-    class="m-auto w-[min(28rem,calc(100vw-2rem))] rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-[0_0_48px_var(--glow)] backdrop:bg-background/90 backdrop:backdrop-blur-sm sm:p-8"
+    class="age-gate m-auto w-[min(28rem,calc(100vw-2rem))] rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-[0_0_48px_var(--glow)] backdrop:bg-background/90 backdrop:backdrop-blur-sm sm:p-8"
     @cancel.prevent
     @close="sync"
   >

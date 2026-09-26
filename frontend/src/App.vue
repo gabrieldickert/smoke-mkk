@@ -1,12 +1,37 @@
 <script setup lang="ts">
 import { useReducedMotion } from 'motion-v'
+import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import AgeGate from './components/AgeGate.vue'
+import ScrollSmoke from './components/ScrollSmoke.vue'
+import SmokeIntro from './components/SmokeIntro.vue'
 import SocialLinks from './components/SocialLinks.vue'
+import { smokeTileUrls } from './smoke'
 
 const route = useRoute()
 const year = new Date().getFullYear() // §6 footer.claim
 const reduceMotion = useReducedMotion()
+
+// Smoke (docs/PLAN.md §4.3): the intro once per full page load and the scroll smoke — neither under
+// reduced motion (checked synchronously, so they are never even mounted). The intro holds until
+// AgeGate reports the gate closed.
+const motionOk = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const smoke = ref(motionOk)
+const gateClosed = ref(false)
+
+// The divider smoke rims (main.css .divider-smoke) take the shared tiles as background images, in
+// both motion modes (under reduced motion they stay as a static texture). Until the class is set
+// the rims are hidden. Built after the first paint (rAF, then a task), so the ~20 ms
+// of tile work never delays the intro's first frame.
+onMounted(async () => {
+  await new Promise((r) => requestAnimationFrame(() => setTimeout(r)))
+  const [a, b, reach] = await smokeTileUrls()
+  const root = document.documentElement
+  root.style.setProperty('--smoke-tile-a', `url("${a}")`)
+  root.style.setProperty('--smoke-tile-b', `url("${b}")`)
+  root.style.setProperty('--smoke-reach', `url("${reach}")`)
+  root.classList.add('smoke-rim')
+})
 
 // Already on /#standorte: the router sees a duplicate navigation and does not scroll again,
 // so scroll here (the section's scroll-mt-20 keeps it clear of the header).
@@ -76,6 +101,8 @@ function toLocations(e: MouseEvent) {
       </div>
     </footer>
 
-    <AgeGate />
+    <ScrollSmoke v-if="motionOk" />
+    <SmokeIntro v-if="smoke" :hold="!gateClosed" @done="smoke = false" />
+    <AgeGate @closed="gateClosed = true" />
   </div>
 </template>

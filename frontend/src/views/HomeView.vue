@@ -8,10 +8,13 @@ import Reveal from '../components/Reveal.vue'
 import SocialLinks from '../components/SocialLinks.vue'
 import AuroraBackground from '../components/ui/AuroraBackground.vue'
 import FlipWords from '../components/ui/FlipWords.vue'
+import { smokeRimStyle } from '../smoke'
 
 const WORDS = ['Vapes', 'Tabak', 'Rauchzubehör', 'Drinks', 'Snacks']
 
 const reduceMotion = useReducedMotion()
+// Divider smoke rims: random speed/offset/phase per divider, once per mount (docs/PLAN.md §4.3).
+const rims = [smokeRimStyle(), smokeRimStyle()]
 const machines = ref<Machine[]>([])
 const status = ref<'loading' | 'ready' | 'error'>('loading')
 const selectedId = ref<number | null>(null)
@@ -137,29 +140,29 @@ function jumpToMap() {
         class="aurora-brand h-auto flex-[6_1_0] overflow-x-clip bg-background px-4 text-foreground dark:bg-background"
       >
         <!-- Vertical padding lives here, not on the flex item: padding on the item would count
-             towards its zero flex basis and skew the 60/40 split. flex-1: fills the hero share, so
-             the action group can sit at its bottom (owner, docs/PLAN.md §4.3 "Hero actions at the
-             bottom"). -->
+             towards its zero flex basis and skew the 60/40 split. flex-1: fills the hero share. -->
         <Reveal class="relative z-10 flex w-full flex-1 flex-col items-center pt-2 pb-6 text-center">
-          <!-- Three rows (owner, docs/PLAN.md §4.3 "Hero actions at the bottom"): brand at the top,
-               the CTA centred in the flex-1 middle row (equal gaps above and below, py-6 = the
-               1.5rem minimum on short screens), the social block at the bottom, 1.5rem (pb-6)
-               above the glowing divider. DOM and focus order unchanged. -->
-          <div class="flex flex-col items-center">
-            <img
-              src="/logo.webp"
-              alt="SMOKE"
-              width="96"
-              height="96"
-              class="size-24 rounded-3xl shadow-[0_0_64px_var(--glow)]"
-            />
-            <!-- Fluid size: RAUCHZUBEHÖR is ~7.6em wide incl. FlipWords' trailing nbsp, plus its px-2
-                 (measured: 292 px of a 343 px content box at 375 px). It must fit one line from 320 px
-                 up, so the size follows the viewport and caps at 3.5rem from ~550 px, so
-                 the hero (with its 1.5rem gaps) fits its 60 % at 1280×800.
+          <!-- Three rows (owner, docs/PLAN.md §4.3 "Headline down to the CTA, bigger", F13): only the
+               logo at the top; headline → tagline → CTA as one tight group centred in the flex-1
+               middle row (the free space splits above and below it; py-4 = the 1rem minimum, which
+               binds at 1280×800); the social block at the bottom, 1.5rem (pb-6) above the glowing
+               divider, clear of its smoke rim. DOM and focus order unchanged. -->
+          <img
+            src="/logo.webp"
+            alt="SMOKE"
+            width="96"
+            height="96"
+            class="size-24 rounded-3xl shadow-[0_0_64px_var(--glow)]"
+          />
+          <div class="flex flex-1 flex-col items-center justify-center py-4">
+            <!-- Fluid size (F13, docs/PLAN.md §4.3 "Headline down to the CTA, bigger"): RAUCHZUBEHÖR
+                 is ~7.6em wide incl. FlipWords' trailing nbsp, plus its px-2. It must fit one line
+                 from 320 px up, so the size follows the viewport ((100vw − 3rem) / 7.9; measured
+                 ~4 % headroom at 320 and 375 px) and caps at 4.5rem: with the gaps at their minimum,
+                 the largest that keeps the hero inside its 60 % at 1280×800 (5rem needs 9 px more).
                  min-h + fixed leading reserve the line while FlipWords swaps words (v-show gap). -->
             <h1
-              class="mt-4 min-h-[1.1em] text-[length:clamp(1.75rem,calc((100vw_-_3rem)/9),3.5rem)] leading-[1.1] font-bold uppercase tracking-tight"
+              class="min-h-[1.1em] text-[length:clamp(1.75rem,calc((100vw_-_3rem)/7.9),4.5rem)] leading-[1.1] font-bold uppercase tracking-tight"
             >
               <span class="sr-only">{{ WORDS.join(' · ') }}</span>
               <!-- Reduced motion: every word stays whole; a line may only break after a separator. -->
@@ -191,7 +194,7 @@ function jumpToMap() {
                  count keeps its lower-case "x" (owner's wording). -->
             <p
               :class="{ invisible: !machines.length }"
-              class="mt-3 max-w-4xl text-2xl leading-tight font-bold uppercase tracking-tight text-balance text-foreground sm:text-4xl"
+              class="mt-2 max-w-4xl text-2xl leading-tight font-bold uppercase tracking-tight text-balance text-foreground sm:text-4xl"
             >
               <span class="text-3xl normal-case text-secondary [text-shadow:0_0_28px_var(--glow)] sm:text-5xl"
                 >{{ machines.length }}x</span
@@ -200,28 +203,28 @@ function jumpToMap() {
                    would remove the only break between the two units. -->
               im <span class="whitespace-nowrap">Main-Kinzig-Kreis</span> <span class="whitespace-nowrap">und Umgebung</span>
             </p>
-          </div>
-          <div class="flex flex-1 items-center justify-center py-6">
-            <a
-              href="#standorte"
-              class="inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-5 py-3 text-base font-semibold uppercase tracking-wide text-primary-foreground shadow-[0_0_24px_var(--glow)] transition-colors duration-200 hover:bg-primary/85 sm:px-7 sm:text-lg"
-              @click.exact.prevent="jumpToMap"
-            >
-              <svg
-                class="size-5 shrink-0"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
+            <div class="mt-4">
+              <a
+                href="#standorte"
+                class="inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-5 py-3 text-base font-semibold uppercase tracking-wide text-primary-foreground shadow-[0_0_24px_var(--glow)] transition-colors duration-200 hover:bg-primary/85 sm:px-7 sm:text-lg"
+                @click.exact.prevent="jumpToMap"
               >
-                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
-              <span class="text-balance">Automat in deiner Nähe finden</span>
-            </a>
+                <svg
+                  class="size-5 shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+                <span class="text-balance">Automat in deiner Nähe finden</span>
+              </a>
+            </div>
           </div>
           <div class="flex flex-col items-center">
             <p class="text-sm text-muted-foreground text-balance">
@@ -236,9 +239,14 @@ function jumpToMap() {
 
       <!-- Glowing dividers on both boundaries, hero | pitch band and pitch band | map (owner,
            docs/PLAN.md §4.3 "Glowing dividers"); one class, styles in main.css. They sit outside the
-           band's overflow-hidden so the glow is not clipped. -->
+           band's overflow-hidden so the glow is not clipped. Each gives off a thin smoke rim
+           (.divider-smoke: one strip flowing up, one flowing down, each on slants inside a sway
+           wrapper, §4.3 "Smoking dividers"); z-[1] so the lower strip paints over the next section
+           rather than under it. -->
       <div class="flex flex-[4_1_0] flex-col">
-        <div aria-hidden="true" class="glow-divider relative h-0.5 shrink-0" />
+        <div aria-hidden="true" class="glow-divider relative z-[1] h-0.5 shrink-0">
+          <span class="divider-smoke" :style="rims[0]"><span><span /></span><span><span /></span></span>
+        </div>
 
         <!-- Pitch band (F9): the middle section between hero and map. A soft radial glow between the
              two glowing dividers; all from tokens, no image, no new component. -->
@@ -302,7 +310,9 @@ function jumpToMap() {
           </a>
         </section>
       </div>
-      <div aria-hidden="true" class="glow-divider absolute inset-x-0 bottom-0 h-0.5" />
+      <div aria-hidden="true" class="glow-divider absolute inset-x-0 bottom-0 z-[1] h-0.5">
+        <span class="divider-smoke" :style="rims[1]"><span><span /></span><span><span /></span></span>
+      </div>
     </div>
 
     <section
