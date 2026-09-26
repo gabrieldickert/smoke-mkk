@@ -13,6 +13,7 @@ const props = defineProps<{
   location: Location | null
   distances: Map<number, number> | null // km per location id, once the visitor's position is known
   nearestId: number | null
+  geoState: 'idle' | 'locating' | 'ok' | 'failed' // the visitor's position request (HomeView)
 }>()
 const emit = defineEmits<{ select: [id: number | null] }>()
 
@@ -127,14 +128,26 @@ const distance = (id: number) => {
     : `${km.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`
 }
 
+// §6 search.count (list rows = locations) while a query is set. Shown under the search field only
+// with ≥ 1 match (0 shows search.noResults instead); the status line announces it either way.
+const count = computed(() => {
+  if (!fold(query.value)) return ''
+  const n = filtered.value.length
+  return n === 1 ? '1 Standort' : `${n} Standorte`
+})
+// §6 geo.locating / geo.unavailable (F24): nothing when idle or once a position is known.
+const geoLine = computed(() =>
+  props.geoState === 'locating'
+    ? 'Standort wird ermittelt …'
+    : props.geoState === 'failed'
+      ? 'Kein Standort freigegeben. Such per PLZ oder Ort.'
+      : '',
+)
+
 // One persistent status line instead of aria-live around the whole list (ui-ux-pro-max
 // "Contextual Live Updates": one atomic message, not a competing live region).
 const announcement = computed(() => {
-  if (!props.location) {
-    if (!fold(query.value)) return ''
-    const n = filtered.value.length
-    return n === 1 ? '1 Standort' : `${n} Standorte` // §6 search.count: list rows = locations
-  }
+  if (!props.location) return [count.value, geoLine.value].filter(Boolean).join(' · ')
   if (state.value === 'error') return "Der Bestand lädt gerade nicht. Versuch's gleich noch mal."
   if (state.value !== 'ready' || !inventory.value) return ''
   if (!inventory.value.items.length) return 'Für diesen Automaten ist noch kein Bestand hinterlegt.'
@@ -224,6 +237,7 @@ const scrollBox =
       >
         <template v-if="location">
           <button
+            id="panel-back"
             type="button"
             class="-mt-2 -ml-2 inline-flex min-h-11 w-fit cursor-pointer items-center gap-1 rounded-lg px-2 text-sm font-semibold text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground"
             @click="back"
@@ -457,6 +471,16 @@ const scrollBox =
               enterkeyhint="search"
               class="mt-1 min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base text-foreground placeholder:text-muted-foreground"
             />
+            <!-- One small muted block under the field (F24): the visible search.count, then the
+                 location feedback, each only when it applies; the list simply starts below it.
+                 muted-foreground on card 6.4:1. -->
+            <p
+              v-if="(count && filtered.length) || geoLine"
+              class="mt-1.5 text-sm text-muted-foreground tabular-nums"
+            >
+              <span v-if="count && filtered.length" class="block">{{ count }}</span>
+              <span v-if="geoLine" class="block">{{ geoLine }}</span>
+            </p>
           </template>
           <div :class="[scrollBox, 'pt-2']" :aria-busy="status === 'loading'">
             <!-- The map gets no overlay; its load error is reported here, next to the list. -->

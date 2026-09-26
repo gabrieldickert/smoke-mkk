@@ -8,7 +8,9 @@ const isImprint = computed(() => route.name === 'impressum')
 
 <template>
   <article class="mx-auto max-w-3xl px-4 py-16">
-    <h1 class="text-3xl font-bold uppercase tracking-tight sm:text-4xl">
+    <!-- F24: "Datenschutzerklärung" is one long word; text-2xl below sm plus hyphenation (lang="de")
+         and break-words keep it inside a 320 px column. -->
+    <h1 class="text-2xl font-bold uppercase tracking-tight hyphens-auto break-words sm:text-4xl">
       {{ isImprint ? 'Impressum' : 'Datenschutzerklärung' }}
     </h1>
     <!--

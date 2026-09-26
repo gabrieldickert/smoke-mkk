@@ -13,8 +13,28 @@
 // on top (rose over violet at alpha a = the old gradient's linear mix). Both drift with the same
 // custom properties, so they stay in sync. The glow is a copy blurred once in SVG (static) whose
 // wrapper pulses its opacity.
-import { useId } from 'vue'
+// Off screen (F25): one IntersectionObserver per divider sets `paused` while it is more than 100 px
+// outside the viewport, which freezes thread drift, glow pulse, rim flow, reach and sway in place
+// (main.css .paused), so at most two dividers animate at a time; they resume from where they
+// stopped, before any of the ≈ 36 px rim can scroll into view.
+import { onMounted, onUnmounted, ref, useId } from 'vue'
 import { rand, smokeRimStyle } from '../smoke'
+
+const root = ref<HTMLElement | null>(null)
+const paused = ref(false)
+let observer: IntersectionObserver | null = null
+onMounted(() => {
+  if (!root.value) return
+  observer = new IntersectionObserver(
+    (entries) => {
+      const e = entries[entries.length - 1]
+      if (e) paused.value = !e.isIntersecting
+    },
+    { rootMargin: '100px' },
+  )
+  observer.observe(root.value)
+})
+onUnmounted(() => observer?.disconnect())
 
 const rim = smokeRimStyle()
 const filterId = `thread-glow-${useId()}`
@@ -88,7 +108,7 @@ const style = {
 </script>
 
 <template>
-  <div aria-hidden="true" :style="style">
+  <div ref="root" aria-hidden="true" :style="style" :class="{ paused }">
     <span class="divider-smoke" :style="rim"><span><span /></span><span><span /></span></span>
     <span class="thread">
       <span class="thread-drift">

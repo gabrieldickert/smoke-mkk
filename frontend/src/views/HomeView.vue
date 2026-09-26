@@ -41,7 +41,7 @@ const nearestId = computed(() => {
   return best
 })
 const mapSection = ref<HTMLElement | null>(null)
-const panelWrap = ref<HTMLElement | null>(null)
+const mapWrap = ref<HTMLElement | null>(null)
 const wide = window.matchMedia('(min-width: 768px)') // Tailwind md: map and panel side by side
 
 // The first-screen caret is hidden once the map section is reached: while #standorte has entered
@@ -123,27 +123,43 @@ function scrollToMap() {
   })
 }
 
-// One selection path for marker, panel list and CTA. Below md the panel sits under the map, so a
-// selection brings it into view (scroll-mt-20 keeps it clear of the sticky header).
+// One selection path for marker, panel list and CTA. Below md the panel sits under the map; a
+// selection scrolls the map card under the sticky header (scroll-mt-20), so the pin just picked
+// and the panel's detail header below it are on screen together (F24).
 function select(id: number | null) {
   selectedId.value = id
   if (id == null || wide.matches) return
-  panelWrap.value?.scrollIntoView({
+  mapWrap.value?.scrollIntoView({
     behavior: reduceMotion.value ? 'auto' : 'smooth',
     block: 'start',
   })
 }
 
-// Denied, unavailable or timed out: nothing happens, the map is already on screen.
+// Location feedback (F24, docs/PLAN.md §4.3 "UX audit 2" 5): the panel's list view shows
+// geo.locating while the browser is asked and geo.unavailable after a denial, error or timeout.
+const geoState = ref<'idle' | 'locating' | 'ok' | 'failed'>('idle')
+
 function locate(selectNearest: boolean) {
-  navigator.geolocation?.getCurrentPosition(
+  if (!navigator.geolocation) {
+    geoState.value = 'failed'
+    return
+  }
+  geoState.value = 'locating'
+  navigator.geolocation.getCurrentPosition(
     ({ coords }) => {
+      geoState.value = 'ok'
       position.value = { lat: coords.latitude, lng: coords.longitude }
       if (selectNearest && nearestId.value != null) select(nearestId.value)
     },
-    () => {},
+    () => (geoState.value = 'failed'),
     { timeout: 10000, maximumAge: 600000 },
   )
+}
+
+// Bypass for the map's pins (F24, WCAG 2.4.1): lands in the panel's search field, or on
+// "Alle Automaten" while a location is shown.
+function skipMap() {
+  ;(document.getElementById('machine-search') ?? document.getElementById('panel-back'))?.focus()
 }
 
 // Hero CTA and pitch-band caret. A plain hash jump would scroll to the right place (router.ts /
@@ -177,9 +193,8 @@ let sectionSmokeSeen = false
 <template>
   <div class="aurora-everywhere">
     <!-- Single element root (no comment above it): App.vue wraps RouterView in <Transition mode="out-in">. -->
-    <!-- TRIAL "aurora-everywhere" (docs/PLAN.md §4.3 "Aurora on all sections"): the hero's aurora
-         layer becomes one fixed backdrop behind the whole page (main.css). Revert = delete the
-         class on this root div and the matching block in main.css. -->
+    <!-- "aurora-everywhere": the hero's aurora layer is one fixed backdrop behind the whole page
+         (main.css; docs/PLAN.md §4.3 "Aurora on all sections"). -->
     <!-- First screen = hero + pitch band (owner, docs/PLAN.md §4.3): together they fill the screen
          below the header, split 60 % hero / 40 % pitch band (the upper divider belongs to the pitch
          share), content centred in each, the caret at the bottom; the map section starts right below
@@ -235,7 +250,7 @@ let sectionSmokeSeen = false
                 v-else
                 aria-hidden="true"
                 :words="WORDS"
-                :duration="2500"
+                :duration="4000"
                 class="text-secondary [text-shadow:0_0_28px_var(--glow)] dark:text-secondary"
               />
             </h1>
@@ -383,25 +398,40 @@ let sectionSmokeSeen = false
            and 1rem air above and below (svh: stable while mobile browser chrome moves, per
            ui-ux-pro-max "Viewport Units"), so the block fits on screen once scrolled to; 30rem
            floor for short windows, 52rem cap for tall ones. Below md the panel grows with the page. -->
-      <Reveal class="mt-8 grid gap-6 md:grid-cols-5">
-        <div
-          class="relative isolate h-80 overflow-hidden rounded-xl border border-border sm:h-96 md:col-span-3 md:h-[clamp(30rem,calc(100svh-6rem),52rem)]"
-        >
-          <MachineMap
-            :locations="locations"
-            :selected-id="selectedId"
-            :position="position"
-            :nearest-id="nearestId"
-            @select="select"
-          />
+      <!-- amount "some" (F24): on a phone this block is ~2.3 screens tall, so a 20 % threshold left
+           the map hidden when the section was reached. -->
+      <Reveal amount="some" class="mt-8 grid gap-6 md:grid-cols-5">
+        <!-- Skip link first in DOM order, visible on focus at the map card's top-right (the zoom
+             control owns the top-left); z-10 in this relative box stacks it above the isolated map
+             wrapper and its Leaflet panes. Same look as the page's skip link. -->
+        <div class="relative md:col-span-3">
+          <a
+            href="#machine-search"
+            class="sr-only rounded-lg bg-primary font-semibold text-primary-foreground focus:not-sr-only focus:absolute focus:top-3 focus:right-3 focus:z-10 focus:px-4 focus:py-3"
+            @click.prevent="skipMap"
+            >Karte überspringen</a
+          >
+          <div
+            ref="mapWrap"
+            class="relative isolate h-80 scroll-mt-20 overflow-hidden rounded-xl border border-border sm:h-96 md:h-[clamp(30rem,calc(100svh-6rem),52rem)]"
+          >
+            <MachineMap
+              :locations="locations"
+              :selected-id="selectedId"
+              :position="position"
+              :nearest-id="nearestId"
+              @select="select"
+            />
+          </div>
         </div>
-        <div ref="panelWrap" class="scroll-mt-20 md:col-span-2 md:h-[clamp(30rem,calc(100svh-6rem),52rem)]">
+        <div class="md:col-span-2 md:h-[clamp(30rem,calc(100svh-6rem),52rem)]">
           <InventoryPanel
             :locations="locations"
             :status="status"
             :location="selected"
             :distances="distances"
             :nearest-id="nearestId"
+            :geo-state="geoState"
             @select="select"
           />
         </div>

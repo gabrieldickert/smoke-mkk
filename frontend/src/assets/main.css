@@ -174,13 +174,12 @@ html.light {
   background-image: var(--dark-gradient), var(--aurora);
 }
 
-/* TRIAL, pending the owner's verdict (docs/PLAN.md §4.3 "Aurora on all sections"): the hero's
-   one aurora layer is lifted out as a fixed backdrop behind the whole home page, instead of a copy
-   per section. The hero drops its opaque background so the layer shows through (pitch band and
+/* Aurora on all sections (docs/PLAN.md §4.3 "Aurora on all sections"): the hero's one aurora
+   layer is lifted out as a fixed backdrop behind the whole home page, instead of a copy per
+   section. The hero drops its opaque background so the layer shows through (pitch band and
    #standorte have none); map and panel keep their own surfaces. Nothing here creates a containing
    block for fixed elements (no transform/filter on the ancestors). Reduced motion: static via the
-   global rule below. REVERT: remove class="aurora-everywhere" on HomeView's root div and this
-   block. */
+   global rule below. */
 .aurora-everywhere .aurora-brand {
   background: transparent;
 }
@@ -272,6 +271,21 @@ html.light {
 }
 .leaflet-container .leaflet-tooltip-top::before {
   border-top-color: var(--border);
+}
+/* Pin tooltip sub-lines (F23): a single pin's street + house number (§6 map.pinAddress), a group's
+   member names one per line (§6 map.cluster), smaller and muted. muted-foreground/card 6.4:1. */
+.leaflet-container .leaflet-tooltip .tip-line {
+  display: block;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+/* Group tooltip: Leaflet's nowrap would put five long names on one line; wrap within 16rem. */
+.leaflet-container .leaflet-tooltip.group-tip {
+  width: max-content;
+  max-width: 16rem;
+  white-space: normal;
 }
 .machine-marker {
   background: transparent;
@@ -626,6 +640,18 @@ html.light {
   to {
     transform: translate(var(--tx), calc(var(--out) * var(--ty)));
   }
+}
+
+/* Off-screen dividers rest (F25, docs/PLAN.md §4.3 "UX audit 2" 8): SmokeDivider sets .paused on
+   its root while it is more than 100 px outside the viewport. Covers every animation in it: thread
+   drift, .thread-glow pulse, the rim strips' reach (mask-position), the sway wrappers and the
+   ::before/::after flow layers. !important because those rules set the `animation` shorthand,
+   which resets the play state, at equal or higher specificity. */
+.paused,
+.paused *,
+.paused *::before,
+.paused *::after {
+  animation-play-state: paused !important;
 }
 
 /* Smoke intro (SmokeIntro.vue, docs/PLAN.md §4.3): while the smoke is up it is the age gate's
