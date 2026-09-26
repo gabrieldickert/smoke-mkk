@@ -73,6 +73,13 @@
   --spotlight: rgb(124 58 237 / 0.35);
   --glow: rgb(167 139 250 / 0.45);
   --map-tint: #3b2a6b;
+  /* Map pins on the lighter map (F18, docs/PLAN.md §4.3): deep brand shades, measured against the
+     land #9389b0: --marker 3.26:1, --marker-selected 3.26:1 (non-text UI ≥ 3:1). The neon look
+     comes from the glow in the bright brand hue, not from the fill. */
+  --marker: #4e09ae;
+  --marker-selected: #7f0a28;
+  --marker-glow: color-mix(in srgb, var(--primary) 80%, transparent);
+  --marker-selected-glow: color-mix(in srgb, var(--accent) 80%, transparent);
 }
 
 @theme inline {
@@ -98,6 +105,8 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-glow: var(--glow);
+  --color-marker: var(--marker);
+  --color-marker-selected: var(--marker-selected);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -181,19 +190,25 @@ html.light {
   z-index: -1;
 }
 
-/* Leaflet: dark map in the brand palette (docs/PLAN.md §4.3), OSM tiles recoloured in CSS only.
-   Markers are L.divIcon (MachineMap.vue). */
+/* Leaflet: lighter map in the brand palette (docs/PLAN.md §4.3 "Lighter map", F18), OSM tiles
+   recoloured in CSS only. Markers are L.divIcon (MachineMap.vue).
+   No invert: OSM's white streets stay the lightest lines. Brightness before contrast, so the
+   light land and the white streets are pulled down together and then spread apart, not clipped.
+   Measured (1280×800, zoom 10 and 12): land #9389b0, streets #bdb3da, black labels 6.4:1 on land,
+   land 5.8:1 against --background, so the card reads as a mid-tone surface, not a white hole. */
 .leaflet-container {
   background: var(--background); /* no grey flash while tiles load */
   font-family: inherit;
 }
-.map-dark .leaflet-tile-pane {
-  filter: grayscale(1) invert(1) brightness(0.5) contrast(1.4);
+.map-brand .leaflet-tile-pane {
+  filter: grayscale(1) brightness(0.7) contrast(1.5);
 }
 /* Brand tint between the tile pane (z 200) and the overlay/marker panes (z 400/600).
    Lives inside .leaflet-map-pane (its own stacking context), so it blends with tiles only and
-   never covers markers, popups or controls. Oversized so panning never reveals an edge. */
-.map-dark .leaflet-map-pane::before {
+   never covers markers, popups or controls. Oversized so panning never reveals an edge.
+   `color` keeps the tiles' luminance (street/label contrast) and takes the violet hue; at 0.6 it
+   stays a lavender grey instead of saturated purple. */
+.map-brand .leaflet-map-pane::before {
   content: "";
   position: absolute;
   top: -50000px;
@@ -204,6 +219,7 @@ html.light {
   pointer-events: none;
   background: var(--map-tint);
   mix-blend-mode: color;
+  opacity: 0.6;
 }
 /* Map focus ring. The container's own outline cannot be seen: outside, the rounded overflow-hidden
    wrapper in HomeView clips it; inset, Leaflet's z-indexed panes (400+) paint over it. So the
@@ -269,8 +285,10 @@ html.light {
   place-items: center;
   cursor: default;
 }
+/* Keyboard focus on a pin. --ring (#a78bfa) is only 1.2:1 on the lighter land (F18), so the pin
+   ring is --background (5.8:1 on the land); the site-wide ring stays violet everywhere else. */
 .machine-marker:focus-visible {
-  outline: 2px solid var(--ring);
+  outline: 2px solid var(--background);
   outline-offset: 2px;
   border-radius: 9999px;
 }
@@ -294,7 +312,7 @@ html.light {
   position: absolute;
   inset: 4px;
   border-radius: 9999px;
-  border: 2px solid var(--secondary);
+  border: 2px solid var(--marker);
   pointer-events: none;
   animation: marker-ring 600ms ease-out calc(var(--drop-delay, 0ms) + 380ms) both;
 }

@@ -32,18 +32,20 @@ const SELECT_ZOOM = 12
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+// Pins on the lighter map (F18): deep fills (≥ 3:1 on the land), light stroke, neon glow in the
+// bright brand hue. Tokens in main.css (.dark: --marker*).
 const DOT =
-  'marker-dot block size-4 rounded-full border-2 border-foreground bg-secondary shadow-[0_0_14px_5px_var(--glow)]'
+  'marker-dot block size-4 rounded-full border-2 border-foreground bg-marker shadow-[0_0_12px_4px_var(--marker-glow)]'
 const DOT_SELECTED =
-  'marker-dot block size-6 rounded-full border-2 border-foreground bg-accent shadow-[0_0_18px_6px_var(--glow)] ring-4 ring-accent/40'
+  'marker-dot block size-6 rounded-full border-2 border-foreground bg-marker-selected shadow-[0_0_14px_5px_var(--marker-selected-glow)] ring-4 ring-accent/50'
 // Nearest location: a persistent dashed ring outside the dot (and outside the selected ring), static,
 // so it reads as "marked" without competing with the selection. Inside the drop wrapper, so it
 // drops in with its marker.
 const NEAREST_RING =
-  '<span class="pointer-events-none absolute -inset-1.5 rounded-full border-2 border-dashed border-foreground"></span>'
-// Visitor: small foreground core in a primary ring, clearly not a location.
+  '<span class="pointer-events-none absolute -inset-1.5 rounded-full border-2 border-dashed border-marker"></span>'
+// Visitor: small foreground core in a deep violet ring (the pins inverted), clearly not a location.
 const YOU_DOT =
-  '<span class="block size-3.5 rounded-full border-[3px] border-primary bg-foreground shadow-[0_0_10px_3px_var(--glow)]"></span>'
+  '<span class="block size-3.5 rounded-full border-[3px] border-marker bg-foreground shadow-[0_0_10px_3px_var(--marker-glow)]"></span>'
 
 // Marker drop-in (docs/PLAN.md §4.3): hidden until the map is on screen, then dropped
 // west→east, once per page load. Only the inner wrapper animates — Leaflet owns the
@@ -250,5 +252,5 @@ watch(() => props.position, placeYou)
 </script>
 
 <template>
-  <div ref="el" class="map-dark size-full" />
+  <div ref="el" class="map-brand size-full" />
 </template>
