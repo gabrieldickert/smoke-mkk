@@ -337,29 +337,62 @@ html.light {
   }
 }
 
-/* Glowing dividers hero | pitch band | map (HomeView, docs/PLAN.md §4.3 "Glowing dividers").
-   A 2 px violet → rose → violet line fading out at both edges; the ::after glow layer pulses its
-   opacity only. Owner's exception to the no-endless-animation rule. Resting opacity is 1, so with
-   reduced motion (animation: none below) the divider stays at full glow. */
-.glow-divider {
-  background: linear-gradient(
-    to right,
-    transparent,
-    var(--primary) 20%,
-    var(--accent) 50%,
-    var(--primary) 80%,
-    transparent
-  );
-}
-.glow-divider::after {
-  content: "";
+/* Organic divider thread (SmokeDivider.vue, docs/PLAN.md §4.3 "Organic divider line", "Glowing
+   dividers"). Each .thread is a static window centred on the line's mean, clipped (no horizontal
+   overflow) and masked; inside it .thread-drift carries the periodic SVG and only translates, by
+   exactly one period (--thread-p), so the loop is seamless and nothing repaints per frame. The
+   first window holds the lavender glow (blurred once in SVG; its wrapper pulses opacity only) and
+   the violet thread, masked with the old end fades (0 → 20 %, 80 → 100 %); the second holds a rose
+   copy masked 20 % → 50 % → 80 %, painted over, which reproduces the old violet → rose → violet
+   gradient while the colours stay put. Both windows take the same drift custom properties, so the
+   copies stay in sync. Painted after the smoke rim, so the thread stays on top of it. Owner's
+   exception to the no-endless-animation rule. Reduced motion: animation: none (global rule) leaves
+   a static thread at full glow. */
+.thread {
   position: absolute;
-  inset: -6px 0; /* a blurred band around the line; the gradient's transparent ends fade it out */
-  background: linear-gradient(to right, transparent, var(--glow) 20%, var(--glow) 80%, transparent);
-  filter: blur(6px);
+  inset-inline: 0;
+  top: calc(50% - 24px); /* SmokeDivider H = 48 */
+  height: 48px;
+  overflow: hidden;
   pointer-events: none;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 20%, #000 80%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 20%, #000 80%, transparent);
+}
+.thread-rose {
+  -webkit-mask-image: linear-gradient(to right, transparent 20%, #000 50%, transparent 80%);
+  mask-image: linear-gradient(to right, transparent 20%, #000 50%, transparent 80%);
+}
+.thread-drift {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--thread-w);
+  height: 100%;
+  animation: thread-drift var(--thread-dur) linear var(--thread-delay) infinite var(--thread-dir);
+}
+.thread svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  fill: var(--primary);
+}
+.thread-rose svg {
+  fill: var(--accent);
+}
+.thread-glow {
+  position: absolute;
+  inset: 0;
   opacity: 1;
   animation: glow-pulse 3s ease-in-out infinite;
+}
+.thread-glow svg {
+  fill: var(--glow);
+}
+@keyframes thread-drift {
+  to {
+    transform: translateX(calc(-1 * var(--thread-p)));
+  }
 }
 @keyframes glow-pulse {
   0%,
@@ -403,11 +436,14 @@ html.light {
    rule, like the pulse. */
 .divider-smoke {
   --rim-max: 36px;
+  --rim-in: 6px; /* each strip reaches this far past the line's mean, for the crossfade */
   display: none;
   position: absolute;
   inset-inline: 0;
-  top: calc(-1 * var(--rim-max));
-  bottom: calc(-1 * var(--rim-max));
+  /* the two strips meet at the line's mean (the middle of the 2 px box): with the wavering thread
+     (F21) a 2 px gap between them would show as a dark straight seam */
+  top: calc(1px - var(--rim-max));
+  bottom: calc(1px - var(--rim-max));
   pointer-events: none;
   /* eased (smoothstep) towards both ends, like the line: no crease where the fade starts */
   -webkit-mask-image: linear-gradient(to right, transparent 0.0%, rgb(0 0 0 / 0.156) 4.5%, rgb(0 0 0 / 0.500) 9.0%, rgb(0 0 0 / 0.844) 13.5%, #000 18.0%, #000 82.0%, rgb(0 0 0 / 0.844) 86.5%, rgb(0 0 0 / 0.500) 91.0%, rgb(0 0 0 / 0.156) 95.5%, transparent 100.0%);
@@ -419,31 +455,36 @@ html.light {
 .divider-smoke > span {
   position: absolute;
   inset-inline: 0;
-  height: var(--rim-max);
+  height: calc(var(--rim-max) + var(--rim-in));
   overflow: clip;
   opacity: 0.85;
-  /* layers top-first: short fade ∪ (reach A ∩ reach B ∩ long fade); the bottom layer's operator is
-     unused. Reach tiles square (same px on both axes). Both fades are eased (1 − smoothstep, several
-     stops, no kink); the long one is 0 from 82 % (≈ 30 px) of the 36 px strip, so nothing ever
-     reaches the clip edge. */
+  /* layers top-first: crossfade ∩ (short fade ∪ (reach A ∩ reach B ∩ long fade)); the bottom
+     layer's operator is unused. Reach tiles square (same px on both axes). F21: each strip reaches
+     --rim-in (6 px) past the line's mean and fades in over those 12 px on an equal-power curve (0.71
+     at the mean), so the two strips crossfade across the thread's ±5 px wander instead of meeting
+     in a straight seam; the fades below are shifted by those 6 px, so from the mean outward they
+     are unchanged. Both fades are eased (1 − smoothstep, several stops, no kink); the long one is 0
+     from 35.5 px (≈ 30 px past the mean) of the 42 px strip, so nothing ever reaches the clip edge. */
   -webkit-mask-image:
-    linear-gradient(var(--fade-dir), #000 0px, rgb(0 0 0 / 0.896) 2px, rgb(0 0 0 / 0.648) 4px, rgb(0 0 0 / 0.352) 6px, rgb(0 0 0 / 0.104) 8px, transparent 10px),
+    linear-gradient(var(--fade-dir), transparent 0px, rgb(0 0 0 / 0.26) 2px, rgb(0 0 0 / 0.5) 4px, rgb(0 0 0 / 0.71) 6px, rgb(0 0 0 / 0.87) 8px, rgb(0 0 0 / 0.97) 10px, #000 12px),
+    linear-gradient(var(--fade-dir), #000 6px, rgb(0 0 0 / 0.896) 8px, rgb(0 0 0 / 0.648) 10px, rgb(0 0 0 / 0.352) 12px, rgb(0 0 0 / 0.104) 14px, transparent 16px),
     var(--smoke-reach),
     var(--smoke-reach),
-    linear-gradient(var(--fade-dir), #000 0.00%, rgb(0 0 0 / 0.957) 10.25%, rgb(0 0 0 / 0.844) 20.50%, rgb(0 0 0 / 0.684) 30.75%, rgb(0 0 0 / 0.500) 41.00%, rgb(0 0 0 / 0.316) 51.25%, rgb(0 0 0 / 0.156) 61.50%, rgb(0 0 0 / 0.043) 71.75%, transparent 82.00%);
+    linear-gradient(var(--fade-dir), #000 6px, rgb(0 0 0 / 0.957) 9.7px, rgb(0 0 0 / 0.844) 13.4px, rgb(0 0 0 / 0.684) 17.1px, rgb(0 0 0 / 0.500) 20.8px, rgb(0 0 0 / 0.316) 24.5px, rgb(0 0 0 / 0.156) 28.1px, rgb(0 0 0 / 0.043) 31.8px, transparent 35.5px);
   mask-image:
-    linear-gradient(var(--fade-dir), #000 0px, rgb(0 0 0 / 0.896) 2px, rgb(0 0 0 / 0.648) 4px, rgb(0 0 0 / 0.352) 6px, rgb(0 0 0 / 0.104) 8px, transparent 10px),
+    linear-gradient(var(--fade-dir), transparent 0px, rgb(0 0 0 / 0.26) 2px, rgb(0 0 0 / 0.5) 4px, rgb(0 0 0 / 0.71) 6px, rgb(0 0 0 / 0.87) 8px, rgb(0 0 0 / 0.97) 10px, #000 12px),
+    linear-gradient(var(--fade-dir), #000 6px, rgb(0 0 0 / 0.896) 8px, rgb(0 0 0 / 0.648) 10px, rgb(0 0 0 / 0.352) 12px, rgb(0 0 0 / 0.104) 14px, transparent 16px),
     var(--smoke-reach),
     var(--smoke-reach),
-    linear-gradient(var(--fade-dir), #000 0.00%, rgb(0 0 0 / 0.957) 10.25%, rgb(0 0 0 / 0.844) 20.50%, rgb(0 0 0 / 0.684) 30.75%, rgb(0 0 0 / 0.500) 41.00%, rgb(0 0 0 / 0.316) 51.25%, rgb(0 0 0 / 0.156) 61.50%, rgb(0 0 0 / 0.043) 71.75%, transparent 82.00%);
-  -webkit-mask-size: 100% 100%, var(--reach-s) var(--reach-s), var(--reach-s2) var(--reach-s2), 100% 100%;
-  mask-size: 100% 100%, var(--reach-s) var(--reach-s), var(--reach-s2) var(--reach-s2), 100% 100%;
-  -webkit-mask-repeat: no-repeat, repeat, repeat, no-repeat;
-  mask-repeat: no-repeat, repeat, repeat, no-repeat;
-  -webkit-mask-position: 0 0, var(--reach-x) var(--reach-y), var(--reach-x2) var(--reach-y2), 0 0;
-  mask-position: 0 0, var(--reach-x) var(--reach-y), var(--reach-x2) var(--reach-y2), 0 0;
-  -webkit-mask-composite: source-over, source-in, source-in, source-over;
-  mask-composite: add, intersect, intersect, add;
+    linear-gradient(var(--fade-dir), #000 6px, rgb(0 0 0 / 0.957) 9.7px, rgb(0 0 0 / 0.844) 13.4px, rgb(0 0 0 / 0.684) 17.1px, rgb(0 0 0 / 0.500) 20.8px, rgb(0 0 0 / 0.316) 24.5px, rgb(0 0 0 / 0.156) 28.1px, rgb(0 0 0 / 0.043) 31.8px, transparent 35.5px);
+  -webkit-mask-size: 100% 100%, 100% 100%, var(--reach-s) var(--reach-s), var(--reach-s2) var(--reach-s2), 100% 100%;
+  mask-size: 100% 100%, 100% 100%, var(--reach-s) var(--reach-s), var(--reach-s2) var(--reach-s2), 100% 100%;
+  -webkit-mask-repeat: no-repeat, no-repeat, repeat, repeat, no-repeat;
+  mask-repeat: no-repeat, no-repeat, repeat, repeat, no-repeat;
+  -webkit-mask-position: 0 0, 0 0, var(--reach-x) var(--reach-y), var(--reach-x2) var(--reach-y2), 0 0;
+  mask-position: 0 0, 0 0, var(--reach-x) var(--reach-y), var(--reach-x2) var(--reach-y2), 0 0;
+  -webkit-mask-composite: source-in, source-over, source-in, source-in, source-over;
+  mask-composite: intersect, add, intersect, intersect, add;
   animation: rim-reach var(--reach-dur) linear var(--reach-delay) infinite;
 }
 .divider-smoke > span:first-child {
@@ -510,12 +551,14 @@ html.light {
   to {
     -webkit-mask-position:
       0 0,
+      0 0,
       calc(var(--reach-x) + var(--reach-dir) * var(--reach-s))
         calc(var(--reach-y) + var(--reach-out) * var(--reach-s)),
       calc(var(--reach-x2) - var(--reach-dir) * var(--reach-s2))
         calc(var(--reach-y2) + var(--reach-out) * var(--reach-s2)),
       0 0;
     mask-position:
+      0 0,
       0 0,
       calc(var(--reach-x) + var(--reach-dir) * var(--reach-s))
         calc(var(--reach-y) + var(--reach-out) * var(--reach-s)),

@@ -5,16 +5,14 @@ import { fetchLocations, type Location } from '../api'
 import InventoryPanel from '../components/InventoryPanel.vue'
 import MachineMap from '../components/MachineMap.vue'
 import Reveal from '../components/Reveal.vue'
+import SmokeDivider from '../components/SmokeDivider.vue'
 import SocialLinks from '../components/SocialLinks.vue'
 import AuroraBackground from '../components/ui/AuroraBackground.vue'
 import FlipWords from '../components/ui/FlipWords.vue'
-import { smokeRimStyle } from '../smoke'
 
 const WORDS = ['Vapes', 'Tabak', 'Rauchzubehör', 'Drinks', 'Snacks']
 
 const reduceMotion = useReducedMotion()
-// Divider smoke rims: random speed/offset/phase per divider, once per mount (docs/PLAN.md §4.3).
-const rims = [smokeRimStyle(), smokeRimStyle()]
 // One map marker per location; a location holds one or more machines (docs/PLAN.md §5, B5).
 const locations = ref<Location[]>([])
 const status = ref<'loading' | 'ready' | 'error'>('loading')
@@ -241,16 +239,12 @@ function jumpToMap() {
         </Reveal>
       </AuroraBackground>
 
-      <!-- Glowing dividers on both boundaries, hero | pitch band and pitch band | map (owner,
-           docs/PLAN.md §4.3 "Glowing dividers"); one class, styles in main.css. They sit outside the
-           band's overflow-hidden so the glow is not clipped. Each gives off a thin smoke rim
-           (.divider-smoke: one strip flowing up, one flowing down, each on slants inside a sway
-           wrapper, §4.3 "Smoking dividers"); z-[1] so the lower strip paints over the next section
-           rather than under it. -->
+      <!-- Dividers on both boundaries, hero | pitch band and pitch band | map (owner, docs/PLAN.md
+           §4.3 "Glowing dividers", "Organic divider line"): SmokeDivider, a wavering thread with its
+           smoke rim. They sit outside the band's overflow-hidden so the glow is not clipped; z-[1]
+           so the lower smoke strip paints over the next section rather than under it. -->
       <div class="flex flex-[4_1_0] flex-col">
-        <div aria-hidden="true" class="glow-divider relative z-[1] h-0.5 shrink-0">
-          <span class="divider-smoke" :style="rims[0]"><span><span /></span><span><span /></span></span>
-        </div>
+        <SmokeDivider class="relative z-[1] h-0.5 shrink-0" />
 
         <!-- Pitch band (F9): the middle section between hero and map. A soft radial glow between the
              two glowing dividers; all from tokens, no image, no new component. -->
@@ -314,9 +308,7 @@ function jumpToMap() {
           </a>
         </section>
       </div>
-      <div aria-hidden="true" class="glow-divider absolute inset-x-0 bottom-0 z-[1] h-0.5">
-        <span class="divider-smoke" :style="rims[1]"><span><span /></span><span><span /></span></span>
-      </div>
+      <SmokeDivider class="absolute inset-x-0 bottom-0 z-[1] h-0.5" />
     </div>
 
     <section
