@@ -13,9 +13,10 @@ const props = defineProps<{
   location: Location | null
   distances: Map<number, number> | null // km per location id, once the visitor's position is known
   nearestId: number | null
-  geoState: 'idle' | 'locating' | 'ok' | 'failed' // the visitor's position request (HomeView)
+  geoState: 'idle' | 'locating' | 'ok' | 'failed' | 'denied' // the visitor's position request (HomeView)
 }>()
-const emit = defineEmits<{ select: [id: number | null] }>()
+// locate: the geo.retry button (F27); HomeView runs the CTA's locate(true), without its scroll.
+const emit = defineEmits<{ select: [id: number | null]; locate: [] }>()
 
 // docs/PLAN.md §6: verfügbar (qty > 3) · fast weg (1–3) · ausverkauft (0)
 const LOW_STOCK_MAX = 3
@@ -135,14 +136,45 @@ const count = computed(() => {
   const n = filtered.value.length
   return n === 1 ? '1 Standort' : `${n} Standorte`
 })
-// §6 geo.locating / geo.unavailable (F24): nothing when idle or once a position is known.
-const geoLine = computed(() =>
-  props.geoState === 'locating'
-    ? 'Standort wird ermittelt …'
-    : props.geoState === 'failed'
-      ? 'Kein Standort freigegeben. Such per PLZ oder Ort.'
-      : '',
+// §6 geo.locating / geo.unavailable (F24) / geo.blocked (F27): nothing when idle or once a
+// position is known.
+const GEO_LINE = {
+  idle: '',
+  ok: '',
+  locating: 'Standort wird ermittelt …',
+  failed: 'Kein Standort freigegeben. Such per PLZ oder Ort.',
+  denied: 'Standort ist im Browser blockiert. Erlaub ihn über das Symbol links neben der Webadresse.',
+} as const
+const geoLine = computed(() => GEO_LINE[props.geoState])
+
+// §6 geo.retry (F27) after geo.unavailable / geo.blocked. It stays mounted through any new attempt
+// that follows (its own, or HomeView's after a re-allow), so keyboard focus survives the
+// locating → failed/denied round trip (a denied site fails within milliseconds) and is still on it
+// when a success replaces the list (see the location watcher below). Its own success opens the
+// nearest location and focus moves to its heading, as for a pick from the list.
+let retrying = false
+const reattempt = ref(false) // 'locating' right after 'failed' / 'denied'
+const showRetry = computed(
+  () =>
+    props.geoState === 'failed' ||
+    props.geoState === 'denied' ||
+    (reattempt.value && props.geoState === 'locating'),
 )
+watch(
+  () => props.geoState,
+  (s, old) => {
+    reattempt.value = s === 'locating' && (old === 'failed' || old === 'denied')
+    if (s === 'locating' || !retrying) return
+    retrying = false
+    if (s !== 'ok') focusHeadingNext = false
+  },
+)
+function retry() {
+  if (props.geoState === 'locating') return
+  retrying = true
+  focusHeadingNext = true
+  emit('locate')
+}
 
 // One persistent status line instead of aria-live around the whole list (ui-ux-pro-max
 // "Contextual Live Updates": one atomic message, not a competing live region).
@@ -179,6 +211,18 @@ function back() {
   else focusSearchNext = true
   emit('select', null)
 }
+
+// A selection made without the panel (HomeView locating by itself after the visitor re-allowed
+// the location, F27) replaces the list under the focus: if focus was inside the list view (e.g. on
+// the retry button), it moves to the detail heading like a list pick. Focus elsewhere (a map pin,
+// the section) stays. Pre-flush watcher: the list is still in the DOM here.
+const panel = ref<HTMLElement | null>(null)
+watch(
+  () => props.location,
+  (now, before) => {
+    if (now && !before && panel.value?.contains(document.activeElement)) focusHeadingNext = true
+  },
+)
 
 function headingRef(el: unknown) {
   if (!focusHeadingNext || !(el instanceof HTMLElement)) return
@@ -222,6 +266,7 @@ const scrollBox =
 
 <template>
   <div
+    ref="panel"
     class="relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card p-5 text-card-foreground"
   >
     <p role="status" class="sr-only">{{ announcement }}</p>
@@ -480,7 +525,19 @@ const scrollBox =
               class="mt-1.5 text-sm text-muted-foreground tabular-nums"
             >
               <span v-if="count && filtered.length" class="block">{{ count }}</span>
-              <span v-if="geoLine" class="block">{{ geoLine }}</span>
+              <!-- The retry button's 44 px hit area comes from min-h-11; -my-3 takes it back out of
+                   the 20 px line, so the line stays compact. secondary on card 6.1:1. -->
+              <span v-if="geoLine" class="block"
+                >{{ geoLine }}<template v-if="showRetry"
+                  >{{ ' ' }}<button
+                    type="button"
+                    class="-my-3 inline-flex min-h-11 cursor-pointer items-center rounded-md px-1 font-semibold text-secondary underline-offset-2 hover:underline"
+                    @click="retry"
+                  >
+                    Nochmal versuchen
+                  </button></template
+                ></span
+              >
             </p>
           </template>
           <div :class="[scrollBox, 'pt-2']" :aria-busy="status === 'loading'">

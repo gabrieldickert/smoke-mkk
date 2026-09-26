@@ -57,10 +57,17 @@ onMounted(async () => {
   })
   if (mapSection.value) caretObserver.observe(mapSection.value)
   // Never prompt on load: only a permission the visitor granted earlier is used, and then only to
-  // mark and sort (no selection, no scrolling).
+  // mark and sort (no selection, no scrolling). A site blocked earlier shows geo.blocked at once.
+  // The same PermissionStatus reports a later re-allow (F27, onPermissionChange).
   navigator.permissions
     ?.query({ name: 'geolocation' })
-    .then((p) => p.state === 'granted' && locate(false))
+    .then((p) => {
+      if (unmounted) return
+      geoPermission = p
+      p.addEventListener('change', onPermissionChange)
+      if (p.state === 'granted') locate(false)
+      else if (p.state === 'denied' && geoState.value === 'idle') geoState.value = 'denied'
+    })
     .catch(() => {})
   try {
     locations.value = await fetchLocations()
@@ -111,6 +118,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  unmounted = true
+  geoPermission?.removeEventListener('change', onPermissionChange)
   caretObserver?.disconnect()
   approach?.disconnect()
   reveal?.disconnect()
@@ -135,11 +144,17 @@ function select(id: number | null) {
   })
 }
 
-// Location feedback (F24, docs/PLAN.md §4.3 "UX audit 2" 5): the panel's list view shows
-// geo.locating while the browser is asked and geo.unavailable after a denial, error or timeout.
-const geoState = ref<'idle' | 'locating' | 'ok' | 'failed'>('idle')
+// Location feedback (F24, docs/PLAN.md §4.3 "UX audit 2" 5 and "Location retry", F27): the panel's
+// list view shows geo.locating while the browser is asked, geo.blocked after a permanent denial
+// (error code 1: the page cannot prompt again) and geo.unavailable after an error or timeout; the
+// last two with the retry button.
+const geoState = ref<'idle' | 'locating' | 'ok' | 'failed' | 'denied'>('idle')
+let lastFromUser = false // the last attempt came from the CTA or the retry button
+let geoPermission: PermissionStatus | null = null
+let unmounted = false
 
 function locate(selectNearest: boolean) {
+  lastFromUser = selectNearest
   if (!navigator.geolocation) {
     geoState.value = 'failed'
     return
@@ -151,9 +166,18 @@ function locate(selectNearest: boolean) {
       position.value = { lat: coords.latitude, lng: coords.longitude }
       if (selectNearest && nearestId.value != null) select(nearestId.value)
     },
-    () => (geoState.value = 'failed'),
+    (e) => (geoState.value = e.code === e.PERMISSION_DENIED ? 'denied' : 'failed'),
     { timeout: 10000, maximumAge: 600000 },
   )
+}
+
+// The visitor re-allowed the site in the browser (site settings) after a failure or denial: locate
+// again without being asked, selecting the nearest only if the visitor had asked for it. A grant
+// from the prompt itself (state 'locating') is already answered by getCurrentPosition. Browsers
+// without the Permissions API rely on the retry button.
+function onPermissionChange() {
+  if (geoPermission?.state !== 'granted') return
+  if (geoState.value === 'failed' || geoState.value === 'denied') locate(lastFromUser)
 }
 
 // Bypass for the map's pins (F24, WCAG 2.4.1): lands in the panel's search field, or on
@@ -433,6 +457,7 @@ let sectionSmokeSeen = false
             :nearest-id="nearestId"
             :geo-state="geoState"
             @select="select"
+            @locate="locate(true)"
           />
         </div>
       </Reveal>
