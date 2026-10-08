@@ -40,6 +40,10 @@ const CATEGORY_LABEL: Record<Category, string> = {
   Other: 'Sonstiges',
 }
 
+// Case- and accent-insensitive key for both searches (place list, F10; detail filter, F32):
+// "schluchtern" finds Schlüchtern.
+const fold = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim()
+
 const reduceMotion = useReducedMotion()
 const state = ref<'idle' | 'loading' | 'error' | 'ready'>('idle')
 const inventory = ref<Inventory | null>(null)
@@ -76,12 +80,18 @@ const photo = computed(() => {
   return { url: m.pictureUrl, alt: `Foto vom Automaten${label} in ${placeName(props.location)}` }
 })
 
+// Detail-view filter (§4.3 F32): folded substring on the item name, client-side only. Per machine —
+// cleared below whenever `machineId` changes (another machine, another location, `panel.back`).
+// The list view's place `query` is a separate ref and stays untouched.
+const filter = ref('')
+
 watch(
   machineId,
   async (id) => {
     controller?.abort()
     inventory.value = null
     photoFailed.value = false
+    filter.value = ''
     if (id == null) {
       state.value = 'idle'
       return
@@ -105,17 +115,20 @@ onUnmounted(() => {
 })
 
 // Within a category, in-stock items first. Array#sort is stable, so the API's name order stays.
-const groups = computed(() =>
-  (Object.keys(CATEGORY_LABEL) as Category[])
+// The F32 filter narrows the items; groups left empty vanish. `summary` below counts unfiltered.
+const groups = computed(() => {
+  const q = fold(filter.value)
+  const items = (inventory.value?.items ?? []).filter((i) => !q || fold(i.name).includes(q))
+  return (Object.keys(CATEGORY_LABEL) as Category[])
     .map((category) => ({
       category,
       label: CATEGORY_LABEL[category],
-      items: (inventory.value?.items.filter((i) => i.category === category) ?? []).sort(
-        (a, b) => Number(b.quantity > 0) - Number(a.quantity > 0),
-      ),
+      items: items
+        .filter((i) => i.category === category)
+        .sort((a, b) => Number(b.quantity > 0) - Number(a.quantity > 0)),
     }))
-    .filter((g) => g.items.length),
-)
+    .filter((g) => g.items.length)
+})
 
 // §6 panel.summary (F30: product count only): n = items with quantity > 0; singular 1 Produkt.
 // The same string feeds the visible line and the status line (one atomic contextual message,
@@ -139,7 +152,6 @@ const updatedAt = computed(() =>
 // case- and accent-insensitive, so "schluchtern" finds Schlüchtern. Filters the list only, never
 // the map. The query lives here, so it survives the detail view and "Alle Automaten".
 const query = ref('')
-const fold = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim()
 const placeMatch = (l: Location, q: string) =>
   fold(l.postalCode).startsWith(q) ||
   [placeName(l), l.city, l.street].some((field) => fold(field).includes(q))
@@ -445,9 +457,25 @@ const scrollBox =
                 class="mt-3 aspect-[3/4] h-48 w-auto shrink-0 self-start rounded-lg border border-border/60 bg-muted object-cover"
                 @error="photoFailed = true"
               />
+              <!-- F32 filter field: same look and ≥ 44 px as the list's search field (ui-ux-pro-max
+                   "Input Labels": visible label, placeholder only as an example). Always present in
+                   the detail view, so the stock below neither jumps nor loses the field while a
+                   machine loads. -->
+              <label for="panel-search" class="mt-3 block text-sm font-semibold">
+                Produkt in diesem Automaten
+              </label>
+              <input
+                id="panel-search"
+                v-model="filter"
+                type="search"
+                placeholder="z. B. Red Bull"
+                autocomplete="off"
+                enterkeyhint="search"
+                class="mt-1 min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base text-foreground placeholder:text-muted-foreground"
+              />
               <div
                 v-if="state === 'ready' && inventory?.items.length"
-                :class="['text-sm text-muted-foreground tabular-nums', (location.machines.length > 1 || photo) && 'mt-3']"
+                class="mt-3 text-sm text-muted-foreground tabular-nums"
               >
                 <p>{{ summary }}</p>
                 <p v-if="updatedAt">Stand: {{ updatedAt }}</p>
@@ -463,6 +491,11 @@ const scrollBox =
                 <template v-else-if="inventory">
                   <p v-if="!inventory.items.length" class="pt-2 text-muted-foreground">
                     Für diesen Automaten ist noch kein Bestand hinterlegt.
+                  </p>
+                  <!-- §6 panel.search.noResults replaces the groups while the filter has no match
+                       (ui-ux-pro-max "Empty States": a message, never a blank box). -->
+                  <p v-else-if="!groups.length" class="pt-2 text-muted-foreground">
+                    Nichts gefunden. Probier einen anderen Begriff.
                   </p>
                   <section v-for="group in groups" :key="group.category" class="mb-5 last:mb-0">
                     <!-- Sticky inside the panel's scroll box, so five groups stay orientable (ui-ux-pro-max).

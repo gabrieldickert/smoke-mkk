@@ -104,14 +104,14 @@ static class Vendon
 {
     // docs/PLAN.md §4.2 "Mapping of result[]". Vendon lists one product under several stock ids and slots on one machine,
     // so rows are grouped by the cleaned name (ordinal, ignore case): quantity is the sum, price the lowest, productId the
-    // smallest stock_id. A row without a selection price is ignored; a name with no priced row is skipped.
-    // Sorted by category (enum order), then name.
+    // smallest stock_id. A row without a selection price is ignored, as is a bookkeeping row (HiddenPrefixes, B10);
+    // a name with no remaining row is skipped. Sorted by category (enum order), then name.
     public static List<InventoryItemDto> Map(List<VendonProduct> products) =>
         products
             .Where(p => p.Type == "PRODUCT" && p.Name is not null)
             .Select(p => (Name: CleanName(p.Name!), p.StockId, p.Amount,
                 Prices: (p.Selections ?? []).Select(s => s.Price).OfType<decimal>().ToList()))
-            .Where(p => p.Prices.Count > 0)
+            .Where(p => p.Prices.Count > 0 && !HiddenPrefixes.Any(h => p.Name.StartsWith(h, StringComparison.OrdinalIgnoreCase)))
             .GroupBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
             .Select(g => new InventoryItemDto(g.Min(p => p.StockId), g.Key, Categorize(g.Key),
                 Math.Max(0, g.Sum(p => p.Amount)), Math.Max(0, (int)Math.Round(g.SelectMany(p => p.Prices).Min() * 100))))
@@ -146,6 +146,10 @@ static class Vendon
     // (`Smash - Schokolade` is a snack, `Gizeh - Hemp Grinder` an accessory, fine; an unknown brand lands in `Sonstiges`,
     // visibly). Upgrade path: the owner tags products in Vendon Cloud with the six category names, and the mapping reads
     // `stock.tags` instead — one function. A keyword change is a PM edit in docs/PLAN.md §4.2 first; this is a verbatim copy.
+    // docs/PLAN.md §4.2 hide rule (B10): Vendon bookkeeping entries, not products (`Divers - Abverkauf Vapes mwst 19%`,
+    // `Neues Produkt Us Snacks - Spirale Testen`). A new prefix is a PM edit in §4.2 first.
+    static readonly string[] HiddenPrefixes = ["Divers", "Neues Produkt"];
+
     static readonly (Category, string[])[] Keywords =
     [
         (Category.Vape, ["elf", "pod", "liquid", "vape", "vozol", "crystal", "hqd", "lost mar", "flerbar", "innocigs", "k#rwa", "kurwa", "puff", "e-shisha", "ivg", "la fume", "device", "nikotinfrei", "mg/ml", "ske ", "187 stra"]),
