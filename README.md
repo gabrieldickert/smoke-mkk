@@ -10,7 +10,7 @@ Plan and rules: [`docs/PLAN.md`](docs/PLAN.md). Agent setup: [`CLAUDE.md`](CLAUD
 Requires Docker Desktop.
 
 ```powershell
-Copy-Item .env.example .env   # then set DB_PASSWORD and ADMIN_API_KEY
+Copy-Item .env.example .env   # then set DB_PASSWORD and VENDON_API_KEY
 docker compose up --build -d
 ```
 
@@ -40,38 +40,24 @@ dotnet run --project backend          # http://localhost:5000
 npm run dev --prefix frontend -- --port 5174   # http://localhost:5174, proxies /api
 ```
 
-For `dotnet run`, set the connection string and key in your shell, for example:
+For `dotnet run`, set the connection string and the Vendon key in your shell, for example:
 
 ```powershell
 $env:ConnectionStrings__Default = "Host=localhost;Database=smoke;Username=smoke;Password=<DB_PASSWORD>"
-$env:ADMIN_API_KEY = "<ADMIN_API_KEY>"
+$env:VENDON_API_KEY = "<VENDON_API_KEY>"
 ```
 
 `docker compose up db -d` does not publish a host port. To run the API outside Docker, publish the database on host port 5433 with a local override, and use `Port=5433` in the connection string. Port 5432 is already taken by another Postgres on the dev machine.
 
 Migrations: `dotnet tool restore` inside `backend/`, then `dotnet ef migrations add <Name>`.
 
-## Update a machine's stock
+## Stock
 
-The request replaces the machine's whole stock list. The machine id is the Vendon device number (`[32]` in Vendon is `/api/machines/32/inventory`); `GET /api/locations` lists every site with its machines.
+Stock, names and prices come live from the Vendon Cloud API: the API polls `machine/{vendonId}/products` for every machine with the server-side `VENDON_API_KEY` every `VENDON_POLL_SECONDS` (default 60) and serves the last list it fetched. Edit stock and prices in Vendon Cloud; the site follows within a minute. Nothing is stored in the database apart from the sites and machines (`GET /api/locations`); the machine id is the Vendon device number (`[32]` in Vendon is `/api/machines/32/inventory`).
 
-```bash
-curl -X PUT http://localhost/api/machines/1/inventory \
-  -H "X-Api-Key: $ADMIN_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '[{"productId":1,"quantity":12,"priceCents":1290}]'
-```
-
-`204` on success, `400` for unknown or duplicate products, negative values or a malformed body, `401` for a missing or wrong key, `503` when `ADMIN_API_KEY` is not set on the server. Send `[]` to clear a machine's stock.
-
-## Product images
-
-Each product has a fixed image path, listed in `docs/PLAN.md` §3 (for example `/products/red-bull-250.webp`). Save the photo as a square WebP, about 400×400, under that exact name in `frontend/public/products/`. Rebuild the web image (`docker compose up --build -d web`). Until a file exists, the site shows a category placeholder.
-
-Use your own photos or packshots you have the rights to. Do not copy brand images from the web.
+Categories are derived from the product name by a keyword rule (`docs/PLAN.md` §4.2); anything unmatched shows under "Sonstiges". The site has no product images yet (`docs/PLAN.md` §10).
 
 ## Open items for the owner
 
-- TODO: real product catalogue (the seed is a placeholder).
 - TODO: product photos for the 9 seeded products (see "Product images").
 - TODO: Impressum and Datenschutz texts.

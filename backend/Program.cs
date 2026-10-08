@@ -1,6 +1,5 @@
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
+using System.Collections.Concurrent;
+using System.Net.Http.Headers;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using SmokeMkk.Api;
@@ -10,18 +9,38 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("ConnectionStrings:Default is not configured.");
 builder.Services.AddDbContext<AppDb>(o => o.UseNpgsql(connectionString, n => n.EnableRetryOnFailure()));
-builder.Services.ConfigureHttpJsonOptions(o =>
-{
-    o.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    // A PUT element missing productId/quantity/priceCents is a 400, not a silent 0.
-    o.SerializerOptions.RespectRequiredConstructorParameters = true;
-});
+builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddOutputCache();
 builder.Services.AddProblemDetails();
 
-// Hash once so the per-request compare is fixed-length and constant-time. Empty or unset = not configured.
-var adminKey = builder.Configuration["ADMIN_API_KEY"];
-byte[]? adminKeyHash = string.IsNullOrWhiteSpace(adminKey) ? null : SHA256.HashData(Encoding.UTF8.GetBytes(adminKey));
+// Vendon Cloud API (docs/PLAN.md §3, §4.2). The key is the trust boundary (CLAUDE.md §5.2): it lives only in this
+// header, is never logged, never put in a URL, never returned. Empty or unset = not configured → the route answers 503
+// and the poller does not start.
+var vendonKey = builder.Configuration["VENDON_API_KEY"];
+var vendonConfigured = !string.IsNullOrWhiteSpace(vendonKey);
+var pollSeconds = int.TryParse(builder.Configuration["VENDON_POLL_SECONDS"], out var s) ? Math.Max(10, s) : 60;
+var vendonBaseUrl = builder.Configuration["VENDON_BASE_URL"];
+if (string.IsNullOrWhiteSpace(vendonBaseUrl)) vendonBaseUrl = "https://cloud.vendon.net/rest/v1.9.0/";
+if (!vendonBaseUrl.EndsWith('/')) vendonBaseUrl += "/";   // relative "machine/{id}/products" must append, not replace the last segment
+// Registered even without the key so the poller's IHttpClientFactory always resolves; without the key the poller
+// never starts and the client carries no header.
+builder.Services.AddHttpClient("vendon", c =>
+    {
+        c.BaseAddress = new Uri(vendonBaseUrl);
+        c.Timeout = TimeSpan.FromSeconds(10);
+        if (vendonConfigured) c.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", vendonKey);
+        c.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+    })
+    .RedactLoggedHeaders(["Authorization"]);   // the factory's handler logs headers at Trace; never the key, even then
+builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);   // else 4 Information lines per fetch, 39 fetches per pass
+
+// The poller's dictionary (docs/PLAN.md §4.2 "Vendon poll"): our machine id → the last list fetched from Vendon.
+var stock = new ConcurrentDictionary<int, InventoryDto>();
+builder.Services.AddSingleton(stock);
+if (vendonConfigured)
+    builder.Services.AddHostedService(sp => new VendonPoller(sp.GetRequiredService<IServiceScopeFactory>(),
+        sp.GetRequiredService<IHttpClientFactory>(), sp.GetRequiredService<ILogger<VendonPoller>>(),
+        TimeSpan.FromSeconds(pollSeconds), stock));
 
 var app = builder.Build();
 
@@ -30,6 +49,7 @@ app.UseStatusCodePages();
 app.UseOutputCache();
 
 // ponytail: migrate + seed in-process is fine for a single replica; move to a migration job if the API ever scales out.
+// Runs before app.Run() starts the hosted services, so the poller's first pass sees a migrated, seeded table.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDb>();
@@ -52,93 +72,33 @@ app.MapGet("/api/locations", (AppDb db) =>
             .ToListAsync())
     .CacheOutput(p => p.Expire(TimeSpan.FromSeconds(60)));
 
+// Live stock from the poller's dictionary (docs/PLAN.md §4.2 "Vendon poll", §5). Order: 404 machine → 503 key not configured
+// → 503 nothing fetched yet for this machine → 200. No output cache here: the dictionary is the cache.
 app.MapGet("/api/machines/{id:int}/inventory", async (int id, AppDb db) =>
 {
     if (!await db.Machines.AnyAsync(m => m.Id == id && m.IsActive))
         return Results.Problem(statusCode: StatusCodes.Status404NotFound);
-
-    var rows = await db.MachineInventory
-        .Where(i => i.MachineId == id)
-        .OrderBy(i => i.Product.Name)
-        .Select(i => new { i.ProductId, i.Product.Name, i.Product.Category, i.Product.ImageUrl, i.Quantity, i.PriceCents, i.UpdatedAt })
-        .ToListAsync();
-
-    // Category is stored as a string, so enum declaration order (Vape, Tobacco, Accessory, Drink, Snack) is applied here; OrderBy is stable, keeping name order.
-    var items = rows
-        .OrderBy(r => r.Category)
-        .Select(r => new InventoryItemDto(r.ProductId, r.Name, r.Category, r.ImageUrl, r.Quantity, r.PriceCents))
-        .ToList();
-    DateTime? updatedAt = rows.Count == 0 ? null : rows.Max(r => r.UpdatedAt);
-    return Results.Ok(new InventoryDto(id, updatedAt, items));
+    if (!vendonConfigured)
+        return Results.Problem(statusCode: StatusCodes.Status503ServiceUnavailable, detail: "Live stock is not configured.");
+    if (!stock.TryGetValue(id, out var entry))
+        return Results.Problem(statusCode: StatusCodes.Status503ServiceUnavailable, detail: "Stock not loaded yet.");
+    return Results.Ok(entry);
 });
 
-// Trust boundary (CLAUDE.md §5.2). Order: 503 key not configured → 401 key → 404 machine → 400 body.
-// The body is read only after authentication, so unauthenticated callers never reach the JSON parser.
-// ponytail: no rate limit — the key must be long and random; add AddRateLimiter on this route if it is ever brute-forced.
-app.MapPut("/api/machines/{id:int}/inventory", async (int id, HttpRequest request, AppDb db) =>
+// Product search over the poller's dictionary (docs/PLAN.md §4.2 "Product search", §5). No DB, no Vendon call, no cache.
+// ponytail: linear scan over ≈ 39 × 60 strings per request, fine for a decade.
+app.MapGet("/api/search", (string? q) =>
 {
-    if (adminKeyHash is null)
-        return Results.Problem(statusCode: StatusCodes.Status503ServiceUnavailable, detail: "Inventory updates are not configured.");
-
-    var provided = request.Headers["X-Api-Key"];
-    if (provided.Count != 1 || !CryptographicOperations.FixedTimeEquals(
-            SHA256.HashData(Encoding.UTF8.GetBytes(provided.ToString())), adminKeyHash))
-        return Results.Problem(statusCode: StatusCodes.Status401Unauthorized);
-
-    if (!await db.Machines.AnyAsync(m => m.Id == id))
-        return Results.Problem(statusCode: StatusCodes.Status404NotFound);
-
-    InventoryWrite?[]? body;
-    try
-    {
-        body = await request.ReadFromJsonAsync<InventoryWrite?[]>();
-    }
-    catch (Exception e) when (e is JsonException or InvalidOperationException or BadHttpRequestException)
-    {
-        // JsonException: malformed/missing fields; InvalidOperationException: wrong content type; BadHttpRequestException: empty/oversized body.
-        return Results.Problem(statusCode: StatusCodes.Status400BadRequest, detail: "Body must be a JSON array of { productId, quantity, priceCents }.");
-    }
-    if (body is null)
-        return Results.Problem(statusCode: StatusCodes.Status400BadRequest, detail: "Body must be a JSON array; send [] to clear the stock.");
-
-    var errors = new Dictionary<string, string[]>();
-    var seen = new HashSet<int>();
-    for (var i = 0; i < body.Length; i++)
-    {
-        var w = body[i];
-        if (w is null) { errors[$"[{i}]"] = ["Element must not be null."]; continue; }
-        if (!seen.Add(w.ProductId)) errors[$"[{i}].productId"] = [$"Duplicate productId {w.ProductId}."];
-        if (w.Quantity < 0) errors[$"[{i}].quantity"] = ["quantity must be >= 0."];
-        if (w.PriceCents < 0) errors[$"[{i}].priceCents"] = ["priceCents must be >= 0."];
-    }
-    var ids = seen.ToArray();
-    var known = await db.Products.Where(p => ids.Contains(p.Id)).Select(p => p.Id).ToListAsync();
-    for (var i = 0; i < body.Length; i++)
-        if (body[i] is { } w && !known.Contains(w.ProductId))
-            errors[$"[{i}].productId"] = [$"Unknown productId {w.ProductId}."];
-    if (errors.Count > 0)
-        return Results.ValidationProblem(errors);
-
-    // Replace = update rows that stay, add new ones, remove the rest; one SaveChanges is one transaction.
-    var now = DateTime.UtcNow;
-    var existing = await db.MachineInventory.Where(i => i.MachineId == id).ToDictionaryAsync(i => i.ProductId);
-    foreach (var w in body)
-    {
-        if (existing.Remove(w!.ProductId, out var row))
-        {
-            row.Quantity = w.Quantity;
-            row.PriceCents = w.PriceCents;
-            row.UpdatedAt = now;
-        }
-        else
-        {
-            db.MachineInventory.Add(new MachineInventory
-                { MachineId = id, ProductId = w.ProductId, Quantity = w.Quantity, PriceCents = w.PriceCents, UpdatedAt = now });
-        }
-    }
-    db.MachineInventory.RemoveRange(existing.Values);
-    await db.SaveChangesAsync();
-    return Results.NoContent();
+    var query = Vendon.Fold(q ?? "");
+    if (query.Length is < 2 or > 60) return Results.Ok(new List<SearchHitDto>());
+    var hits = stock.Values
+        .Select(inv => new SearchHitDto(inv.MachineId,
+            inv.Items.Where(i => i.Quantity > 0 && Vendon.Fold(i.Name).Contains(query, StringComparison.Ordinal))
+                .Select(i => i.Name).OrderBy(n => n, StringComparer.OrdinalIgnoreCase).Take(5).ToList()))
+        .Where(h => h.Products.Count > 0)
+        .OrderBy(h => h.MachineId)
+        .ToList();
+    return Results.Ok(hits);
 });
 
 app.Run();
@@ -146,6 +106,6 @@ app.Run();
 // docs/PLAN.md §5 — wire names are camelCase (System.Text.Json web defaults), enums as strings.
 record LocationDto(int Id, string Slug, string Name, string Street, string PostalCode, string City, double Lat, double Lng, string? GoogleMapsUrl, List<MachineDto> Machines);
 record MachineDto(int Id, string Label, string? PictureUrl);
-record InventoryItemDto(int ProductId, string Name, Category Category, string? ImageUrl, int Quantity, int PriceCents);
+record InventoryItemDto(int ProductId, string Name, Category Category, int Quantity, int PriceCents);
 record InventoryDto(int MachineId, DateTime? UpdatedAt, List<InventoryItemDto> Items);
-record InventoryWrite(int ProductId, int Quantity, int PriceCents);
+record SearchHitDto(int MachineId, List<string> Products);   // B9: a machine whose current stock matches a product search

@@ -3,8 +3,9 @@ using Microsoft.EntityFrameworkCore.Design;
 
 namespace SmokeMkk.Api;
 
-// Declaration order is the display and sort order of inventory items (docs/PLAN.md §3, §5).
-public enum Category { Vape, Tobacco, Accessory, Drink, Snack }
+// Declaration order is the display and sort order of inventory items (docs/PLAN.md §4.2, §5). Used only in the DTO since B7;
+// Other = no keyword matched. Stock itself is not stored: it comes live from Vendon per request.
+public enum Category { Vape, Tobacco, Accessory, Drink, Snack, Other }
 
 // One site = one map marker (docs/PLAN.md §3, §4.2). A site can hold several machines.
 public class Location
@@ -21,7 +22,7 @@ public class Location
     public List<Machine> Machines { get; set; } = [];
 }
 
-// One vending machine with its own stock; Id is the Vendon device number.
+// One vending machine; Id is the Vendon device number. Its stock is fetched live from Vendon by VendonId.
 public class Machine
 {
     public int Id { get; set; }
@@ -32,48 +33,15 @@ public class Machine
     public string? PictureUrl { get; set; }   // absolute URL of a photo of the machine; null for most (docs/PLAN.md §3 "Machine photos")
 }
 
-public class Product
-{
-    public int Id { get; set; }
-    public required string Name { get; set; }
-    public Category Category { get; set; }
-    public string? ImageUrl { get; set; }   // site-relative, e.g. "/products/red-bull-250.webp" (docs/PLAN.md §3)
-}
-
-public class MachineInventory
-{
-    public int MachineId { get; set; }
-    public int ProductId { get; set; }
-    public Product Product { get; set; } = null!;
-    public int Quantity { get; set; }
-    public int PriceCents { get; set; }
-    public DateTime UpdatedAt { get; set; }
-}
-
 public class AppDb(DbContextOptions<AppDb> options) : DbContext(options)
 {
     public DbSet<Location> Locations => Set<Location>();
     public DbSet<Machine> Machines => Set<Machine>();
-    public DbSet<Product> Products => Set<Product>();
-    public DbSet<MachineInventory> MachineInventory => Set<MachineInventory>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Location>().HasIndex(l => l.Slug).IsUnique();
         b.Entity<Machine>().HasIndex(m => m.VendonId).IsUnique();
-
-        b.Entity<Product>().Property(p => p.Category).HasConversion<string>();
-
-        b.Entity<MachineInventory>(e =>
-        {
-            e.HasKey(i => new { i.MachineId, i.ProductId });
-            e.HasOne<Machine>().WithMany().HasForeignKey(i => i.MachineId);
-            e.ToTable(t =>
-            {
-                t.HasCheckConstraint("CK_MachineInventory_Quantity", "\"Quantity\" >= 0");
-                t.HasCheckConstraint("CK_MachineInventory_PriceCents", "\"PriceCents\" >= 0");
-            });
-        });
     }
 }
 

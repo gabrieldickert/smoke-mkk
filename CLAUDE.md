@@ -18,7 +18,7 @@ Stack: C# / .NET 10 · Vue 3 + Vite + TypeScript · Tailwind 4 + Inspira UI + mo
 |---|---|---|
 | anything | `docs/PLAN.md` §1–§2 (context, decisions) | `agent-skills:using-agent-skills` when unsure which applies |
 | `frontend/**` — screens, components, styles, layout, copy placement, review | `docs/PLAN.md` §4.3, §5, §6 | **`ui-ux-pro-max` — mandatory, first, every time**; then `agent-skills:frontend-ui-engineering`; browser checks: `agent-skills:browser-testing-with-devtools` |
-| `backend/**` — endpoints, DTOs, EF, seed | `docs/PLAN.md` §4.2, §5, §3 | `agent-skills:api-and-interface-design`; the PUT: `agent-skills:security-and-hardening` |
+| `backend/**` — endpoints, DTOs, EF, seed | `docs/PLAN.md` §4.2, §5, §3 | `agent-skills:api-and-interface-design`; the Vendon proxy: `agent-skills:security-and-hardening` |
 | `docker-compose.yml`, Dockerfiles, `nginx.conf` | `docs/PLAN.md` §4.4 | — |
 | planning tickets, reconciling reports, committing (PM) | `docs/PLAN.md` §7, §9 | `agent-skills:planning-and-task-breakdown`, `agent-skills:code-review-and-quality`, `agent-skills:git-workflow-and-versioning` |
 | something broke | — | `agent-skills:debugging-and-error-recovery` |
@@ -61,7 +61,7 @@ frontend/    Vue 3 + Vite + TS — src/{main.ts,router.ts,api.ts,App.vue,compone
 scripts/     dev.ps1 (start/stop without Docker)
 docs/        PLAN.md (constitution) — later ADRs as docs/ADR-00N-topic.md
 docker-compose.yml   db (postgres:17-alpine) · api (:8080 internal) · web (nginx, :80 published)
-.env.example         DB_PASSWORD, ADMIN_API_KEY — copy to .env, never commit .env
+.env.example         DB_PASSWORD, VENDON_API_KEY, VENDON_BASE_URL — copy to .env, never commit .env
 .claude/agents/      smokemkk-pm.md, smokemkk-backend.md, smokemkk-frontend.md
 .claude/skills/      ui-ux-pro-max (project skill)
 .claude/settings.json  plugins: claude-seo, agent-skills
@@ -80,14 +80,14 @@ npm run build --prefix frontend       # includes vue-tsc typecheck
 dotnet build backend -warnaserror
 ```
 
-Operator workflow for stock (until phase 2): `PUT /api/machines/{id}/inventory` with header `X-Api-Key` — see `docs/PLAN.md` §5 and `README.md`.
+Stock is live from the Vendon Cloud API (`docs/PLAN.md` §4.2 "Vendon proxy"); the operator edits it in Vendon Cloud, there is no write endpoint.
 
 **Docker Desktop is installed but cannot start until WSL is installed (`wsl --install` as admin, then reboot).** Until then: build both apps, but no runtime verification.
 
 ## 5. Non-negotiables
 
 1. **German to people, English to developers.** UI copy, legal pages, and anything a visitor reads: German, informal *du*, from §6. Code, comments, commit messages, docs, logs: English.
-2. **The PUT is a trust boundary.** Validate every field, compare the API key in constant time, return `503` when the key is not configured (never "open"), never log the key. This is the one place where phase 1 is not lazy.
+2. **The Vendon key is a trust boundary.** It lives in `VENDON_API_KEY`, is sent only server-side, never logged, never in a URL or a response; the inventory route returns `503` when it is not configured (never "open") and `502` when Vendon fails. Everything from Vendon is untrusted input: only the fields §4.2 names are read.
 3. **The skipped list (§10) is binding.** No Pinia, no vue-leaflet, no shadcn-vue, no Iconify, no test framework, no extra runtime dependency without a PM decision written into the plan. Vue + Tailwind + the listed packages cover phase 1.
 4. **Frontend work goes through `ui-ux-pro-max`.** Every frontend ticket, not only the first — the skill is the design method, not a one-off palette picker.
 5. **Legal floor.** `Impressum` and `Datenschutz` reachable from every page, the age gate included (it stays closed on the legal pages); visible OpenStreetMap attribution on the map; the 18+ dialog on first visit. These are not polish.

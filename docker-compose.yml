@@ -18,7 +18,9 @@ services:
     build: ./backend
     environment:
       ConnectionStrings__Default: Host=db;Database=smoke;Username=smoke;Password=${DB_PASSWORD}
-      ADMIN_API_KEY: ${ADMIN_API_KEY}
+      VENDON_API_KEY: ${VENDON_API_KEY}
+      VENDON_BASE_URL: ${VENDON_BASE_URL:-https://cloud.vendon.net/rest/v1.9.0/}
+      VENDON_POLL_SECONDS: ${VENDON_POLL_SECONDS:-60}
     depends_on:
       db:
         condition: service_healthy

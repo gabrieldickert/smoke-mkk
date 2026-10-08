@@ -2,7 +2,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace SmokeMkk.Api;
 
-// Seeds docs/PLAN.md §3 once. Runs only when Machines is empty, so operator edits are never overwritten.
+// Seeds docs/PLAN.md §3 (sites and machines) once. Runs only when Machines is empty, so operator edits are never overwritten.
+// Stock is not seeded since B7: it comes live from the Vendon Cloud API.
 // Not HasData on purpose: HasData would turn every seed change into a migration that rewrites live rows.
 public static class Seed
 {
@@ -58,48 +59,13 @@ public static class Seed
         ];
         foreach (var p in photos) machines.Single(m => m.Id == p.Id).PictureUrl = p.Url;
 
-        // Placeholder catalogue (TODO(owner): confirm or replace). Image files are supplied by the owner in frontend/public/products/. Price is per machine in MachineInventory.
-        (Product Product, int PriceCents)[] catalogue =
-        [
-            (new() { Id = 1, Name = "Elf Bar 600 Blueberry Ice", Category = Category.Vape, ImageUrl = "/products/elfbar-600-blueberry-ice.webp" }, 1299),
-            (new() { Id = 2, Name = "Elf Bar 600 Watermelon", Category = Category.Vape, ImageUrl = "/products/elfbar-600-watermelon.webp" }, 1199),
-            (new() { Id = 3, Name = "Elf Bar 600 Cola", Category = Category.Vape, ImageUrl = "/products/elfbar-600-cola.webp" }, 899),
-            (new() { Id = 4, Name = "Red Bull Energy Drink 250 ml", Category = Category.Drink, ImageUrl = "/products/red-bull-250.webp" }, 299),
-            (new() { Id = 5, Name = "Coca-Cola Zero 330 ml", Category = Category.Drink, ImageUrl = "/products/coca-cola-zero-330.webp" }, 350),
-            (new() { Id = 6, Name = "Vio Wasser still 500 ml", Category = Category.Drink, ImageUrl = "/products/vio-still-500.webp" }, 250),
-            (new() { Id = 7, Name = "Snickers", Category = Category.Snack, ImageUrl = "/products/snickers.webp" }, 150),
-            (new() { Id = 8, Name = "Haribo Goldbären 100 g", Category = Category.Snack, ImageUrl = "/products/haribo-goldbaeren-100.webp" }, 199),
-            (new() { Id = 9, Name = "Pringles Paprika 40 g", Category = Category.Snack, ImageUrl = "/products/pringles-paprika-40.webp" }, 250),
-            (new() { Id = 10, Name = "Marlboro Red 20 Stück", Category = Category.Tobacco, ImageUrl = "/products/marlboro-red-20.webp" }, 1100),
-            (new() { Id = 11, Name = "Pueblo Classic Tabak 30 g", Category = Category.Tobacco, ImageUrl = "/products/pueblo-classic-30.webp" }, 995),
-            (new() { Id = 12, Name = "OCB Slim Premium Papers", Category = Category.Accessory, ImageUrl = "/products/ocb-slim-premium.webp" }, 150),
-            (new() { Id = 13, Name = "Clipper Feuerzeug", Category = Category.Accessory, ImageUrl = "/products/clipper-feuerzeug.webp" }, 250),
-        ];
-
-        // Rotated per machine: every machine shows all three stock states (>3, 1–3, 0).
-        int[] quantities = [7, 5, 0, 12, 2, 8, 6, 0, 3, 9, 1, 4, 10];
-        var now = DateTime.UtcNow;
-
         db.Locations.AddRange(sites.Select(s => s.Site));
         db.Machines.AddRange(machines);
-        db.Products.AddRange(catalogue.Select(c => c.Product));
-        db.MachineInventory.AddRange(
-            from m in machines
-            from c in catalogue.Select((c, i) => (c, i))
-            select new MachineInventory
-            {
-                MachineId = m.Id,
-                ProductId = c.c.Product.Id,
-                Quantity = quantities[(c.i + m.Id) % quantities.Length],
-                PriceCents = c.c.PriceCents,
-                UpdatedAt = now,
-            });
         db.SaveChanges();
 
         // Explicit ids bypass the identity sequences; move them past the seed so later inserts do not collide.
         db.Database.ExecuteSqlRaw("""SELECT setval(pg_get_serial_sequence('"Locations"', 'Id'), (SELECT MAX("Id") FROM "Locations"))""");
         db.Database.ExecuteSqlRaw("""SELECT setval(pg_get_serial_sequence('"Machines"', 'Id'), (SELECT MAX("Id") FROM "Machines"))""");
-        db.Database.ExecuteSqlRaw("""SELECT setval(pg_get_serial_sequence('"Products"', 'Id'), (SELECT MAX("Id") FROM "Products"))""");
     }
 
     // #1–#4, #13–#25: Google search on the street address (docs/PLAN.md §3).

@@ -53,13 +53,13 @@ if ($Stop) {
 if (-not (Test-Path '.env')) {
     $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
     function New-Secret([int]$bytes) { $b = New-Object byte[] $bytes; $rng.GetBytes($b); [Convert]::ToBase64String($b).TrimEnd('=').Replace('+', '-').Replace('/', '_') }
-    "# Local secrets, generated $(Get-Date -Format yyyy-MM-dd). Never commit.`nDB_PASSWORD=$(New-Secret 24)`nADMIN_API_KEY=$(New-Secret 32)`n" |
+    "# Local secrets, generated $(Get-Date -Format yyyy-MM-dd). Never commit.`nDB_PASSWORD=$(New-Secret 24)`nVENDON_API_KEY=`nVENDON_BASE_URL=https://cloud.vendon.net/rest/v1.9.0/`n" |
         Set-Content -Path '.env' -Encoding ascii -NoNewline
-    Write-Host 'created .env with random secrets'
+    Write-Host 'created .env; add your VENDON_API_KEY to it'
 }
 $envVars = @{}
 Get-Content '.env' | Where-Object { $_ -match '^\s*[A-Z_]+=' } | ForEach-Object { $k, $v = $_ -split '=', 2; $envVars[$k.Trim()] = $v.Trim() }
-foreach ($k in 'DB_PASSWORD', 'ADMIN_API_KEY') { if (-not $envVars[$k]) { throw "$k is missing in .env" } }
+foreach ($k in 'DB_PASSWORD', 'VENDON_API_KEY') { if (-not $envVars[$k]) { throw "$k is missing in .env" } }
 $env:PGPASSWORD = $envVars['DB_PASSWORD']
 
 # 2. Database cluster on 5433.
@@ -89,9 +89,10 @@ if (Test-Port $apiPort) {
     Write-Host "port $apiPort is busy; assuming the API already runs"
 } else {
     $env:ConnectionStrings__Default = "Host=localhost;Port=$dbPort;Database=smoke;Username=smoke;Password=$($envVars['DB_PASSWORD'])"
-    $env:ADMIN_API_KEY = $envVars['ADMIN_API_KEY']
+    $env:VENDON_API_KEY = $envVars['VENDON_API_KEY']
+    if ($envVars['VENDON_BASE_URL']) { $env:VENDON_BASE_URL = $envVars['VENDON_BASE_URL'] }
     Start-Process powershell -ArgumentList '-NoExit', '-Command', "`$Host.UI.RawUI.WindowTitle='SMOKE API :$apiPort'; dotnet run --project backend --launch-profile http"
-    Remove-Item Env:ConnectionStrings__Default, Env:ADMIN_API_KEY
+    Remove-Item Env:ConnectionStrings__Default, Env:VENDON_API_KEY, Env:VENDON_BASE_URL -ErrorAction SilentlyContinue
 }
 
 # 4. Site.

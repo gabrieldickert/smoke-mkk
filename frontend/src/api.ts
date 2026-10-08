@@ -1,6 +1,6 @@
 // Types mirror docs/PLAN.md §5 verbatim. Do not add fields here; the contract is the PM's.
 
-export type Category = "Vape" | "Tobacco" | "Accessory" | "Drink" | "Snack";
+export type Category = "Vape" | "Tobacco" | "Accessory" | "Drink" | "Snack" | "Other";   // Other since B7: no keyword matched
 
 export interface Location {   // one map marker (B5)
   id: number;
@@ -21,19 +21,23 @@ export interface Machine {    // one vending machine; the id the inventory route
   pictureUrl: string | null;   // absolute URL of a photo of this machine (B6); null for most machines
 }
 
-export interface InventoryItem {
-  productId: number;
-  name: string;
-  category: Category;
-  imageUrl: string | null;   // site-relative, e.g. "/products/red-bull-250.webp"; file may not exist yet
-  quantity: number;      // >= 0
-  priceCents: number;    // >= 0
+export interface InventoryItem {   // one Vendon stock item on this machine (B7); no images
+  productId: number;     // Vendon stock_id
+  name: string;          // Vendon name without the "SM:" prefix
+  category: Category;    // keyword rule, §4.2
+  quantity: number;      // >= 0, summed over the machine's slots
+  priceCents: number;    // >= 0, lowest slot price
+}
+
+export interface SearchHit {   // B9: a machine whose current stock matches a product search
+  machineId: number;
+  products: string[];    // matching in-stock product names, sorted, at most 5
 }
 
 export interface Inventory {
   machineId: number;
-  updatedAt: string | null;   // max(updated_at) over items; null when no items
-  items: InventoryItem[];     // sorted by category (Vape, Tobacco, Accessory, Drink, Snack), then name
+  updatedAt: string | null;   // when the API fetched it from Vendon; null when no items
+  items: InventoryItem[];     // sorted by category (Vape, Tobacco, Accessory, Drink, Snack, Other), then name
 }
 
 export interface InventoryWrite {   // PUT body element
@@ -53,6 +57,9 @@ export const fetchLocations = (signal?: AbortSignal) =>
 
 export const fetchInventory = (machineId: number, signal?: AbortSignal) =>
   getJson<Inventory>(`/api/machines/${machineId}/inventory`, signal);
+
+export const fetchSearch = (q: string, signal?: AbortSignal) =>
+  getJson<SearchHit[]>(`/api/search?q=${encodeURIComponent(q)}`, signal);
 
 // docs/PLAN.md §6 "location display name": the name without its leading "SMOKE " (the header
 // carries the brand), wherever a location is named in the UI.
