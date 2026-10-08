@@ -563,6 +563,8 @@ Runs once, by the PM, after both specialists have reported. A specialist's own b
 - **A Postgres server already listens on 127.0.0.1:5432 on this machine** (not ours). Never publish the compose `db` on host port 5432; use 5433 for local API development.
 - The `agent-skills` plugin loads on the next session start (enabled in `.claude/settings.json`); `ui-ux-pro-max` is already in `.claude/skills/`.
 
+**Live server (recorded 2026-10-08, first documented deploy).** Ubuntu VM `31.70.83.196`, user `root`, key `secrets/private.ppk` (local, git-ignored), 0.8 GB RAM — no Docker (too small; compose stays the dev/CI path). Layout: published API in `/opt/smokemkk/api` (framework-dependent, .NET 10 runtime installed, no SDK), systemd `smokemkk-api.service` (user `smokemkk`, `EnvironmentFile=/etc/smokemkk.env` with `ConnectionStrings__Default`, `ASPNETCORE_URLS` = :8080, `VENDON_API_KEY`, `VENDON_BASE_URL`, `VENDON_POLL_SECONDS`), local PostgreSQL 18 (`smoke`), nginx serving `/var/www/smokemkk` with `/api/` → 127.0.0.1:8080, Let's Encrypt on `https://31-70-83-196.sslip.io`. Deploy = build locally (`dotnet publish backend -c Release`, `npm run build --prefix frontend`), `pscp` both to `…/api.new` and `…/smokemkk.new`, stop service, swap folders (previous kept as `.old` for rollback), start, check `/health`, `/api/locations`, one inventory, the journal for `Vendon pass done: 39/39`. Ponytail: a `scripts/deploy.ps1` for these steps when the third deploy happens.
+
 ## 9. Tickets and ownership
 
 | ID | Owner | Scope (paths) | Done when | Depends on |

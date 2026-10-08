@@ -57,6 +57,10 @@ Stock, names and prices come live from the Vendon Cloud API: the API polls `mach
 
 Categories are derived from the product name by a keyword rule (`docs/PLAN.md` §4.2); anything unmatched shows under "Sonstiges". The site has no product images yet (`docs/PLAN.md` §10).
 
+## Live server
+
+See `docs/PLAN.md` §8 "Live server": published API under systemd, static frontend under nginx, no Docker. Deploy = build locally, upload with `pscp`, swap the folders, restart `smokemkk-api`.
+
 ## Open items for the owner
 
 - TODO: product photos for the 9 seeded products (see "Product images").
