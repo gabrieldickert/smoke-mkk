@@ -21,3 +21,6 @@ __pycache__/
 
 # local Postgres cluster for Docker-less dev
 .localdb/
+
+# deploy build output (scripts/deploy.ps1)
+.deploy/

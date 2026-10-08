@@ -59,7 +59,14 @@ Categories are derived from the product name by a keyword rule (`docs/PLAN.md` �
 
 ## Live server
 
-See `docs/PLAN.md` §8 "Live server": published API under systemd, static frontend under nginx, no Docker. Deploy = build locally, upload with `pscp`, swap the folders, restart `smokemkk-api`.
+See `docs/PLAN.md` §8 "Live server": published API under systemd, static frontend under nginx, no Docker.
+
+```powershell
+.\scripts\deploy.ps1          # build here, upload with pscp, swap folders, restart smokemkk-api, check
+.\scripts\deploy.ps1 -SkipBuild
+```
+
+Needs PuTTY (`plink`, `pscp`) on PATH and the server key at `secrets/private.ppk` (git-ignored). Server secrets live in `/etc/smokemkk.env` and are edited by hand.
 
 ## Open items for the owner
 
