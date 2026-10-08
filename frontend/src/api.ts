@@ -18,6 +18,7 @@ export interface Location {   // one map marker (B5)
 export interface Machine {    // one vending machine; the id the inventory routes take
   id: number;
   label: string;         // "" when it is the only machine at its location, else e.g. "Grün", "Driving Range"
+  pictureUrl: string | null;   // absolute URL of a photo of this machine (B6); null for most machines
 }
 
 export interface InventoryItem {

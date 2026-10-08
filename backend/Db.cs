@@ -28,6 +28,8 @@ public class Machine
     public int LocationId { get; set; }
     public string Label { get; set; } = "";   // "" when it is the only machine at its location
     public bool IsActive { get; set; }
+    public int VendonId { get; set; }   // the machine's id in the Vendon Cloud API (docs/PLAN.md §3)
+    public string? PictureUrl { get; set; }   // absolute URL of a photo of the machine; null for most (docs/PLAN.md §3 "Machine photos")
 }
 
 public class Product
@@ -58,6 +60,7 @@ public class AppDb(DbContextOptions<AppDb> options) : DbContext(options)
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Location>().HasIndex(l => l.Slug).IsUnique();
+        b.Entity<Machine>().HasIndex(m => m.VendonId).IsUnique();
 
         b.Entity<Product>().Property(p => p.Category).HasConversion<string>();
 

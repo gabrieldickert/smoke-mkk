@@ -1,6 +1,6 @@
 # Smoke MKK — Phase 1 implementation plan
 
-*Status: T0, B1–B3, F1–F13 done and committed (F10 = UX audit + owner additions, aurora on all sections kept by the owner 2026-09-26; F11–F13 = smoke intro, scroll/divider smoke, bigger hero headline, 2026-09-26; B4 = 24 sites from the Vendon export, 2026-09-26, seed checked on a fresh DB; B5 + F15 = one pin per location with a machine picker, 24 locations / 39 machines, 2026-09-26; F16–F17 = stock list gap to scrollbar and flush sticky headings, F19 = taller map + panel on desktop, 2026-09-26; F22 = section smoke reveal over #standorte, held before the map shows, plus the sprite edge fix, 2026-09-26; UX audit 2 → F23–F25 done 2026-09-26, F14 folded into F24) · API + site verified end to end without Docker (local Postgres 16 on 5433, see README) · T2 compose run still blocked on WSL · Owner: the PM/orchestrator (`.claude/agents/smokemkk-pm.md`).*
+*Status: T0, B1–B3, F1–F13 done and committed (F10 = UX audit + owner additions, aurora on all sections kept by the owner 2026-09-26; F11–F13 = smoke intro, scroll/divider smoke, bigger hero headline, 2026-09-26; B4 = 24 sites from the Vendon export, 2026-09-26, seed checked on a fresh DB; B5 + F15 = one pin per location with a machine picker, 24 locations / 39 machines, 2026-09-26; F16–F17 = stock list gap to scrollbar and flush sticky headings, F19 = taller map + panel on desktop, 2026-09-26; F22 = section smoke reveal over #standorte, held before the map shows, plus the sprite edge fix, 2026-09-26; UX audit 2 → F23–F25 done 2026-09-26, F14 folded into F24; B6 + F28 = Vendon ids and machine photos from the Vendon Cloud API, 2026-10-08) · API + site verified end to end without Docker (local Postgres 16 on 5433, see README) · T2 compose run still blocked on WSL · Owner: the PM/orchestrator (`.claude/agents/smokemkk-pm.md`).*
 
 This is the constitution for phase 1. Anyone — human or agent — picking the project up reads `CLAUDE.md` first, then this file, then takes a ticket from §9. The two specialists implement against §5 (contract) and §6 (copy) **as written here**. Changing either is the PM's decision and is written back here before anyone codes against it.
 
@@ -58,36 +58,48 @@ Smoke MKK operates 39 self-service vending machines at 24 sites (vapes, drinks, 
 | 24 | alsfeld | SMOKE Alsfeld | Enggasse 7 | 36304 | Alsfeld | 50.75151 | 9.27258 | true | 39 |
 | 25 | lohr | SMOKE Lohr | Willi-Bleicher-Straße 1 | 97816 | Lohr a. Main | 50.00629 | 9.57408 | true | 20 · Vendon label "IG Metall"; Bavaria |
 
-**Machines per site** (`Machine.Id` = Vendon number, `Label` = Vendon's suffix; `""` when the site has one machine). Vendon's venue suffixes on single machines (Heise, Caritas, IG Metall, Nahkauf, Montone) are not labels. All 39 are active; the defective OMS unit without a site is not seeded.
+**Machines per site** (`Machine.Id` = Vendon number, `Label` = Vendon's suffix; `""` when the site has one machine; `VendonId` = the machine's id in the Vendon Cloud API, B6). Vendon's venue suffixes on single machines (Heise, Caritas, IG Metall, Nahkauf, Montone) are not labels. All 39 are active; the defective OMS unit without a site (Vendon 396109) and the unassigned telemetry unit (Vendon 580253) are not seeded.
 
-| site | machines (id label) |
+| site | machines (id label → VendonId) |
 |---|---|
-| 1 fulda | 38 |
-| 2 weisskirchen | 22 |
-| 3 langenselbold | 23 Blau · 24 Pink · 25 Gelb · 26 Grün |
-| 4 schluechtern | 28 Pink · 29 Gelb · 30 Grün · 31 Blau · 32 Bunt |
-| 5 bad-orb | 7 |
-| 6 jossgrund | 15 Bunt · 16 Grün |
-| 8 waechtersbach | 2 Grün · 3 Bunt |
-| 9 rothenbergen | 27 |
-| 10 hesseldorf | 1 |
-| 11 hellstein | 6 |
-| 12 lauterbach | 34 Gelb · 35 Pink · 36 Grün · 37 Blau |
-| 13 bad-orb-kanalstrasse | 9 Blau · 10 Pink · 11 Grün |
-| 14 bad-orb-martinusstrasse | 8 |
-| 15 bad-orb-frankfurter-strasse | 12 |
-| 16 bad-orb-wuerzburger-strasse | 13 |
-| 17 neuenschmidten | 5 |
-| 18 spielberg | 4 |
-| 19 lettgenbrunn | 17 Halfway House · 18 Driving Range |
-| 20 mernes | 14 |
-| 21 neuberg | 21 |
-| 22 steinau | 33 |
-| 23 kempfenbrunn | 19 |
-| 24 alsfeld | 39 |
-| 25 lohr | 20 |
+| 1 fulda | 38 → 396121 |
+| 2 weisskirchen | 22 → 337325 |
+| 3 langenselbold | 23 Blau → 574652 · 24 Pink → 574645 · 25 Gelb → 574653 · 26 Grün → 574553 |
+| 4 schluechtern | 28 Pink → 574637 · 29 Gelb → 574555 · 30 Grün → 574648 · 31 Blau → 574659 · 32 Bunt → 578254 |
+| 5 bad-orb | 7 → 574647 |
+| 6 jossgrund | 15 Bunt → 574650 · 16 Grün → 520743 |
+| 8 waechtersbach | 2 Grün → 337324 · 3 Bunt → 574646 |
+| 9 rothenbergen | 27 → 574581 |
+| 10 hesseldorf | 1 → 574641 |
+| 11 hellstein | 6 → 574603 |
+| 12 lauterbach | 34 Gelb → 574658 · 35 Pink → 396122 · 36 Grün → 574651 · 37 Blau → 574644 |
+| 13 bad-orb-kanalstrasse | 9 Blau → 574654 · 10 Pink → 574633 · 11 Grün → 574655 |
+| 14 bad-orb-martinusstrasse | 8 → 574649 |
+| 15 bad-orb-frankfurter-strasse | 12 → 576113 |
+| 16 bad-orb-wuerzburger-strasse | 13 → 577852 |
+| 17 neuenschmidten | 5 → 554489 |
+| 18 spielberg | 4 → 542301 |
+| 19 lettgenbrunn | 17 Halfway House → 552712 · 18 Driving Range → 552711 |
+| 20 mernes | 14 → 549886 |
+| 21 neuberg | 21 → 396123 |
+| 22 steinau | 33 → 574656 |
+| 23 kempfenbrunn | 19 → 577262 |
+| 24 alsfeld | 39 → 574657 |
+| 25 lohr | 20 → 574613 |
 
-24 sites, 39 machines.
+24 sites, 39 machines. Source of the `VendonId` column: `GET machine` on the Vendon Cloud API, 2026-10-08 (`[NN]` prefix of the Vendon machine name = our `Machine.Id`); `GET location` returned the same 24 sites with 39 machines.
+
+**Machine photos** (`Machine.PictureUrl`, B6; owner, 2026-10-08): Vendon's `picture_url_large` — a public JPEG on `cloud.vendon.net`, portrait 1500×2000, ~0.5 MB, loads without the API key. Only three machines have one; every other row is `null`:
+
+| machine | PictureUrl |
+|---|---|
+| 2 (waechtersbach Grün) | `https://cloud.vendon.net/images/vending_pic/337324_654cc6cbaa811_large.jpg` |
+| 22 (weisskirchen) | `https://cloud.vendon.net/images/vending_pic/337325_65f2e6bfef3e5_large.jpg` |
+| 35 (lauterbach Pink) | `https://cloud.vendon.net/images/vending_pic/396122_6781202fc424f_large.jpg` |
+
+The site hot-links these (ponytail: Vendon can rename or drop them; copy the files into `frontend/public/machines/` and point the column there if that ever happens). New photos the operator uploads in Vendon reach the site through the phase-2 sync, not by hand.
+
+**Vendon Cloud API** (owner has access since 2026-10-08; probed by the PM, no public docs): base `https://cloud.vendon.net/rest/v1.9.0/`, header `Authorization: Token <VENDON_API_KEY>` + `Accept: application/json`, response `{ "code": 200, "result": [...] }`. Known routes: `location`, `machine`, `machine/{vendonId}/products`, `stats/inventoryReport?machine_id={vendonId}`, `user`. Rate limiting exists (`X-Vendon-API-Requests` header; ~150 bad requests in a few minutes produced a temporary 403 "Unauthorized API access" on every route). `VENDON_API_KEY` and `VENDON_BASE_URL` live in `.env` (names in `.env.example`); the phase-2 stock sync (§11) reads them.
 
 Google-Maps URLs for the `google_maps_url` column. #1–#4 and #13–#25 use `https://www.google.com/maps/search/?api=1&query=<url-encoded "street, postal_code city">`. #5–#12 use the original Linktree short links (their pins match the Vendon GPS within ~50 m):
 
@@ -178,7 +190,7 @@ C:\smokemkk\
 Entities (EF defaults, no naming plugin):
 
 - `Location(Id, Slug, Name, Street, PostalCode, City, Lat, Lng, GoogleMapsUrl)` — `Slug` unique; one map marker (B5)
-- `Machine(Id, LocationId, Label, IsActive)` — FK to `Location`; `Label` non-null, `""` when alone at its site; inventory hangs off the machine (B5; before B5 `Machine` carried the site fields)
+- `Machine(Id, LocationId, Label, IsActive, VendonId)` — FK to `Location`; `Label` non-null, `""` when alone at its site; inventory hangs off the machine (B5; before B5 `Machine` carried the site fields); `VendonId` (B6) is the machine's id in the Vendon Cloud API (§3), non-null, unique, not exposed in §5 until the sync needs it; `PictureUrl` (B6) is the nullable absolute URL of the machine's photo (§3 "Machine photos"), exposed as `pictureUrl` in §5
 - `Product(Id, Name, Category, ImageUrl)` — `ImageUrl` is a nullable site-relative path (§3); `Category` is a C# enum `Vape | Tobacco | Accessory | Drink | Snack` (this declaration order is the sort order) stored as string (`HasConversion<string>()`), so a later age filter is a WHERE clause
 - `MachineInventory(MachineId, ProductId, Quantity, PriceCents, UpdatedAt)` — composite PK; `Quantity >= 0` and `PriceCents >= 0` as check constraints
 
@@ -188,6 +200,7 @@ Rules:
 - API key: header `X-Api-Key` compared with `CryptographicOperations.FixedTimeEquals` against env `ADMIN_API_KEY`; missing env → the PUT returns 503 (never "open"). Never log the key.
 - Startup: `db.Database.Migrate()` (single replica → no separate migration container), then `Seed.Run(db)` = insert §3 only if `Machines` is empty (B5 keeps that check), so operator edits are never overwritten. **Not** `HasData`.
 - Migration `AddLocations` (B5) is data-preserving: it creates `Locations`, copies every existing `Machines` row into it 1:1 (same id, slug, name, address, coordinates, URL), sets the `Locations` id sequence past them, points `Machines.LocationId` at the copy, adds `Label` = `""`, then drops the moved columns. An existing database therefore keeps its sites, machines and stock (one machine per site); only a fresh database gets the §3 Vendon list.
+- Migration `AddVendonFields` (B6) is data-preserving like `AddLocations`: it adds `Machines.VendonId` as nullable and `Machines.PictureUrl` (nullable text), backfills the 39 `VendonId` rows and the 3 `PictureUrl` rows from the §3 tables with plain `UPDATE ... WHERE "Id" = n` statements, then makes `VendonId` non-null and unique. A fresh database runs the same migration on an empty table and gets the values from the seed; an existing database keeps every row and its stock.
 - `UseNpgsql(cs, o => o.EnableRetryOnFailure())` covers the first-boot window where `pg_isready` passes before the DB is fully created.
 - No repositories, services layer, MediatR, AutoMapper, or test project. DTOs are `record`s next to the endpoints in `Program.cs`.
 
@@ -406,6 +419,7 @@ export interface Location {   // one map marker (B5)
 export interface Machine {    // one vending machine; the id the inventory routes take
   id: number;
   label: string;         // "" when it is the only machine at its location, else e.g. "Grün", "Driving Range"
+  pictureUrl: string | null;   // absolute URL of a photo of this machine (B6); null for most machines
 }
 
 export interface InventoryItem {
@@ -432,7 +446,7 @@ export interface InventoryWrite {   // PUT body element
 
 | Route | Auth | Success | Errors |
 |---|---|---|---|
-| `GET /api/locations` | none | `200 Location[]` — locations with at least one active machine, sorted by `name`; cached 60 s (replaces `GET /api/machines`, B5) | — |
+| `GET /api/locations` | none | `200 Location[]` — locations with at least one active machine, sorted by `name`; cached 60 s (replaces `GET /api/machines`, B5); each machine carries `pictureUrl` (B6) | — |
 | `GET /api/machines/{id}/inventory` | none | `200 Inventory` | `404` machine missing or inactive |
 | `PUT /api/machines/{id}/inventory` | header `X-Api-Key` | `204` — **replaces** the machine's whole stock list with the body | `400` ProblemDetails: unknown `productId`, duplicate `productId`, `quantity < 0`, `priceCents < 0`, missing field, malformed JSON, zero-length body; `[]` is allowed and clears the stock · `401` missing/wrong key · `404` machine missing (inactive machines are accepted) · `503` `ADMIN_API_KEY` not configured. Checked in the order 503 → 401 → 404 → 400. |
 | `GET /health` | none | `200` text `ok` | — |
@@ -472,6 +486,7 @@ Informal *du*. No exclamation marks except the hero and rows marked *owner's wor
 | panel.route | `Route` (link in the panel header of the selected machine; was `card.route` until F10) |
 | panel.machinePicker | `Welcher Automat?` (legend of the machine picker; only at a location with 2+ machines) |
 | panel.machineFallback | `Automat {n}` (picker option when a machine's `label` is `""`; n = its 1-based position) |
+| panel.photoAlt | `Foto vom Automaten {label} in {place}` (alt text of the machine photo in the detail view, F28; label = the machine's `label`; place = the location's display name). When `label` is `""` (single machine at the site): `Foto vom Automaten in {place}` — never the `panel.machineFallback` text, which would read "Automaten Automat 1" |
 | location.machineCount | `{n} Automaten` (list row and marker tooltip, only when n ≥ 2; tooltip form `{display name} · {n} Automaten`, before `· Am nächsten`) |
 | panel.back | `Alle Automaten` (button at the top of the panel while a machine is selected; returns to the list) |
 | search.label | `PLZ oder Ort` (visible label of the panel's search field) |
@@ -564,6 +579,8 @@ Runs once, by the PM, after both specialists have reported. A specialist's own b
 | **F25** | smokemkk-frontend | `frontend/src/components/SmokeDivider.vue`, `frontend/src/assets/main.css` — `ui-ux-pro-max` first; §4.3 "UX audit 2" item 8. Does not touch the aurora. No new dependency. | `npm run build` clean; each divider's thread, glow and rim animations are paused (`animation-play-state: paused`) while it is off screen and resume within 100 px of entering; visually identical on screen; reduced motion unchanged (static); before/after idle frame rates from `scratchpad/audit2.mjs` (CPU 4×, 1280×800 and 375×812, top and map) reported, map-section number not lower than before; console clean | F24 |
 | **F26** | smokemkk-frontend | `frontend/src/components/InventoryPanel.vue`, `frontend/src/views/HomeView.vue` (section heading + caret label only) — §6 `section.locations` → `Unsere Standorte` (the pitch body keeps its "Unsere Automaten haben trotzdem auf"); `ui-ux-pro-max` first; owner, 2026-09-26: the list-view heading (small uppercase `<h3>`) reads `Alle {n} Standorte` per §6 `panel.title`, n = total locations from the loaded list (24), the same while searching; before the list has loaded (skeleton, load error) it reads `Alle Standorte` without a number. The F24 visible `search.count` line under the search field and the geo line stay exactly as they are. `panel.back` stays `Alle Automaten`. No new dependency. | `npm run build` clean; browser at 1280×800 and 375×812 against the running API: heading `Alle 24 Standorte`; typing `63619` keeps the heading at 24 and the line under the field reads `5 Standorte`; `Fulda` → `1 Standort`; `xyz` → heading still 24 + `search.noResults`; back button unchanged; no layout jump; console clean | F24 |
 | **F27** | smokemkk-frontend | `frontend/src/views/HomeView.vue`, `frontend/src/components/InventoryPanel.vue` — `ui-ux-pro-max` first; §4.3 "Location retry"; §6 `geo.blocked`, `geo.retry`. No new dependency, no new component. **Done 2026-09-26**; outcome: after a self-triggered locate, focus moves to the detail heading only if it was inside the panel; a change to `denied` while `failed` is ignored. | `npm run build` clean; headless Chrome (CDP) at 1280×800 and 375×812 against the running API: `Browser.setPermission` geolocation `denied` → CTA → `geo.blocked` + `Nochmal versuchen`; set `granted` + a position near Wächtersbach → the page locates by itself (change event), nearest marked and selected, geo line gone; `Emulation.setGeolocationOverride {}` (unavailable) → `geo.unavailable` + button → override a position → button → nearest selected; button keyboard-reachable, ≥ 44 px, focus visible; status line announces each text; console clean | F26 |
+| **B6** | smokemkk-backend | `backend/Db.cs`, `backend/Seed.cs`, `backend/Program.cs` (`MachineDto` + the one projection only), one migration `AddVendonFields` under `backend/Migrations/` — `Machine.VendonId` (`int`, non-null, unique index) and `Machine.PictureUrl` (`string?`) per §4.2; the seed's per-site machine tuples gain the Vendon id from the §3 table (`(Id, Label, VendonId)`) and the three `PictureUrl` values from §3 "Machine photos" are set after the projection (not in every tuple); `MachineDto(Id, Label, PictureUrl)` per §5; migration per §4.2 "Migration `AddVendonFields`" (both columns nullable → backfill 39 + 3 rows by `Id` with the §3 values → `VendonId` non-null + unique). Done in two passes on 2026-10-08: the first pass (`AddVendonId`) was superseded before commit when the owner asked for the photos. | `dotnet build backend -warnaserror` clean; exactly four migrations; `dotnet ef migrations has-pending-model-changes` none; the migration's `Up` contains 39 + 3 `UPDATE` statements whose pairs match §3 byte for byte; seed values match §3; `GET /api/locations` shows `pictureUrl` on every machine (`null` on 36) | §3, §4.2, §5 |
+| **F28** | smokemkk-frontend | `frontend/src/api.ts` (mirror §5 `Machine.pictureUrl`), `frontend/src/components/InventoryPanel.vue` — `ui-ux-pro-max` first; owner, 2026-10-08: in the detail view, when the picked machine has a `pictureUrl`, show its photo between the header (name, address, route link) and the stock summary: `<img :src :alt loading="lazy" decoding="async" width="1500" height="2000">` with §6 `panel.photoAlt`, portrait, capped (≈ 12–14 rem tall, rounded, `object-cover`, left-aligned or centred as the skill advises), no layout jump when it loads (reserve the box from the intrinsic ratio), hidden entirely on `error`; switching machines in the picker swaps or removes the photo with the existing cross-fade; no photo → nothing rendered, no placeholder. No new string beyond §6, no new dependency. | `npm run build` clean; against the running B6 API at 1280×800 and 375×812: Wächtersbach → `Grün` shows the photo, `Bunt` shows none; Weisskirchen and Lauterbach `Pink` show theirs; the stock list below stays reachable and the panel height rule (F19) still holds; alt text matches §6; no console error, no horizontal scroll; reduced motion → no fade | B6, §5, §6 |
 | **T2** | PM | run §7; legal placeholder review; visually compare all 24 pins with the Google links; commit; update this file's status line | §7 all green | B1, F1, Docker Desktop |
 
 B1 and F1 run **in parallel** — disjoint paths, contract already fixed. The migration is created once, in B1, by the backend specialist; nobody else runs `dotnet ef`.
@@ -589,7 +606,7 @@ B1 and F1 run **in parallel** — disjoint paths, contract already fixed. The mi
 
 | Phase | Scope |
 |---|---|
-| 2 | Inventory upkeep: tiny admin page or a telemetry polling job (depends on what the machines expose); low-stock badge |
+| 2 | Inventory upkeep: a polling job against the Vendon Cloud API (§3 "Vendon Cloud API"; `machine/{vendonId}/products` or `stats/inventoryReport`) replacing the seed stock, the PUT stays as manual override; needs a Vendon product → `Product` mapping; low-stock badge |
 | 3 | B2C shop: catalogue, cart, checkout (Stripe/PayPal), real age verification (legally required for vapes), order e-mails; adds `customer`, `order`, `order_line` |
 | 4 | B2B: business accounts, net price lists, invoice payment, bulk orders; adds `price_list` |
 

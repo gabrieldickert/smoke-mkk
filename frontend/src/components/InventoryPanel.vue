@@ -47,11 +47,23 @@ watch(
 // §6 panel.machineFallback: "Automat {n}" (1-based) when a machine has no label.
 const machineLabel = (label: string, index: number) => label || `Automat ${index + 1}`
 
+// Photo of the picked machine (F28): §6 panel.photoAlt — "Foto vom Automaten {label} in {place}",
+// without the label part when the machine has none (never the machineFallback text).
+// `photoFailed` hides the <img> for good after an `error`; it resets with every machine change.
+const photoFailed = ref(false)
+const photo = computed(() => {
+  const m = props.location?.machines.find((m) => m.id === machineId.value)
+  if (!m?.pictureUrl || !props.location || photoFailed.value) return null
+  const label = m.label ? ` ${m.label}` : ''
+  return { url: m.pictureUrl, alt: `Foto vom Automaten${label} in ${placeName(props.location)}` }
+})
+
 watch(
   machineId,
   async (id) => {
     controller?.abort()
     inventory.value = null
+    photoFailed.value = false
     if (id == null) {
       state.value = 'idle'
       return
@@ -363,9 +375,24 @@ const scrollBox =
               :exit="{ opacity: 0, transition: { duration: reduceMotion ? 0 : 0.15, ease: 'easeIn' } }"
               class="flex min-h-0 flex-1 flex-col"
             >
+              <!-- Machine photo (F28): the box is reserved from the intrinsic 3:4 ratio (width/height
+                   attributes + aspect-ratio), so nothing jumps when it loads; left-aligned like the
+                   text column above it; gone for good after an error (ui-ux-pro-max: reserve media
+                   space, descriptive alt, lazy load). -->
+              <img
+                v-if="photo"
+                :src="photo.url"
+                :alt="photo.alt"
+                loading="lazy"
+                decoding="async"
+                width="1500"
+                height="2000"
+                class="mt-3 aspect-[3/4] h-48 w-auto shrink-0 self-start rounded-lg border border-border/60 bg-muted object-cover"
+                @error="photoFailed = true"
+              />
               <div
                 v-if="state === 'ready' && inventory?.items.length"
-                :class="['text-sm text-muted-foreground tabular-nums', location.machines.length > 1 && 'mt-3']"
+                :class="['text-sm text-muted-foreground tabular-nums', (location.machines.length > 1 || photo) && 'mt-3']"
               >
                 <p>{{ summary }}</p>
                 <p v-if="updatedAt">Stand: {{ updatedAt }}</p>

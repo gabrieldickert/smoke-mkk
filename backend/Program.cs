@@ -48,7 +48,7 @@ app.MapGet("/api/locations", (AppDb db) =>
             .OrderBy(l => l.Name)
             .Select(l => new LocationDto(l.Id, l.Slug, l.Name, l.Street, l.PostalCode, l.City, l.Lat, l.Lng, l.GoogleMapsUrl,
                 l.Machines.Where(m => m.IsActive).OrderBy(m => m.Label).ThenBy(m => m.Id)
-                    .Select(m => new MachineDto(m.Id, m.Label)).ToList()))
+                    .Select(m => new MachineDto(m.Id, m.Label, m.PictureUrl)).ToList()))
             .ToListAsync())
     .CacheOutput(p => p.Expire(TimeSpan.FromSeconds(60)));
 
@@ -145,7 +145,7 @@ app.Run();
 
 // docs/PLAN.md §5 — wire names are camelCase (System.Text.Json web defaults), enums as strings.
 record LocationDto(int Id, string Slug, string Name, string Street, string PostalCode, string City, double Lat, double Lng, string? GoogleMapsUrl, List<MachineDto> Machines);
-record MachineDto(int Id, string Label);
+record MachineDto(int Id, string Label, string? PictureUrl);
 record InventoryItemDto(int ProductId, string Name, Category Category, string? ImageUrl, int Quantity, int PriceCents);
 record InventoryDto(int MachineId, DateTime? UpdatedAt, List<InventoryItemDto> Items);
 record InventoryWrite(int ProductId, int Quantity, int PriceCents);
